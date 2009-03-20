@@ -24,6 +24,7 @@
                         <property name="label">gtk-new</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                       </object>
                     </child>
                     <child>
@@ -31,6 +32,7 @@
                         <property name="label">gtk-open</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                       </object>
                     </child>
                     <child>
@@ -38,6 +40,7 @@
                         <property name="label">gtk-save</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                       </object>
                     </child>
                     <child>
@@ -45,6 +48,7 @@
                         <property name="label">gtk-save-as</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                       </object>
                     </child>
                     <child>
@@ -57,6 +61,7 @@
                         <property name="label">gtk-quit</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                       </object>
                     </child>
                   </object>
@@ -76,6 +81,7 @@
                         <property name="label">gtk-about</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                       </object>
                     </child>
                   </object>
@@ -89,25 +95,31 @@
           </packing>
         </child>
         <child>
-          <object class="GtkTextView" id="corusView">
+          <object class="GtkTextView" id="corpusView">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="editable">False</property>
           </object>
           <packing>
             <property name="position">1</property>
           </packing>
         </child>
         <child>
-          <object class="GtkStatusbar" id="statusbar2">
+          <placeholder/>
+        </child>
+        <child>
+          <object class="GtkStatusbar" id="statusbar4">
             <property name="visible">True</property>
             <property name="spacing">2</property>
           </object>
           <packing>
             <property name="expand">False</property>
-            <property name="position">2</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </object>
     </child>
   </object>
+  <object class="GtkTreeSelection" id="treeselection1"/>
+  <object class="GtkTreeSelection" id="treeselection2"/>
 </interface>
