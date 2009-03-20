@@ -2,14 +2,14 @@
 <glade-interface>
   <!-- interface-requires gtk+ 2.16 -->
   <!-- interface-naming-policy project-wide -->
-  <widget class="GtkWindow" id="main">
+  <widget class="GtkWindow" id="mainWindow">
     <property name="title" translatable="yes">Annotation Helper</property>
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
         <property name="spacing">2</property>
         <child>
-          <widget class="GtkMenuBar" id="menubar2">
+          <widget class="GtkMenuBar" id="mainMenu">
             <property name="visible">True</property>
             <child>
               <widget class="GtkMenuItem" id="menuitem5">
@@ -105,16 +105,13 @@
           </packing>
         </child>
         <child>
-          <placeholder/>
-        </child>
-        <child>
-          <widget class="GtkStatusbar" id="statusbar4">
+          <widget class="GtkStatusbar" id="statusBar">
             <property name="visible">True</property>
             <property name="spacing">2</property>
           </widget>
           <packing>
             <property name="expand">False</property>
-            <property name="position">3</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </widget>
