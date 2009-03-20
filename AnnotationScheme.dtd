@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ELEMENT corpus (tokens, errors)>
+<!ELEMENT errors (error*)>
+<!ELEMENT tokens (token*)>
+<!ELEMENT errtoks EMPTY>
+<!ELEMENT error (errtoks, type, target)>
+<!ELEMENT type (Form|Morph|Syn|Lex|Grammar|Style|Typo|Undef)>
+
+<!ELEMENT Form (comment) >
+<!ATTLIST Form cat (agglutination|register|diacritic|homonymy|speling) #REQUIRED>
+<!ELEMENT Morph (comment) >
+<!ATTLIST Morph cat (derivation|inflection|compounding) #REQUIRED >
+<!ELEMENT Syn (comment) >
+<!ATTLIST Syn cat (countability|agreement|worder|wmissing|wredundant|cohesion) #REQUIRED >
+<!ELEMENT Lex (comment) >
+<!ATTLIST Lex cat (meaning|adjectivecompl|adverbcompl|verbcompl|nouncompl|prefab) #REQUIRED >
+<!ELEMENT Grammar (comment) >
+<!ATTLIST Grammar cat (class|aux|gender|mode|number|person|tense|voice|euphony) #REQUIRED>
+<!ELEMENT Style (comment) >
+<!ATTLIST Style cat (unclear|heavy|politeness|idiom) #REQUIRED >
+<!ELEMENT Typo (comment) >
+<!ELEMENT Undef (comment) >
+
+<!ELEMENT comment (#PCDATA) >
+<!ATTLIST comment author CDATA #REQUIRED >
+
+<!ELEMENT target (#PCDATA) >
+<!ELEMENT token (#PCDATA)>
+
+<!ATTLIST token idx ID #REQUIRED>
+<!ATTLIST errtoks idx IDREFS #REQUIRED>
+

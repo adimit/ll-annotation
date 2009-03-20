@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ELEMENT corpus (tokens, errors)>
+<!ELEMENT tokens (token*)>
+<!ELEMENT errors (error*)>
+
+<!ELEMENT token (#PCDATA)>
+<!ATTLIST token idx ID #REQUIRED>
+
+<!ELEMENT error (errortokens)>
+<!ELEMENT errortokens EMPTY>
+<!ATTLIST errortokens idx IDREFS #REQUIRED>
