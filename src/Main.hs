@@ -2,6 +2,8 @@ module Main where
     
 import Tokenizer
 import SimpleDTD
+import Graphics.UI.Gtk
+import Graphics.UI.Gtk.Glade
 import System.Environment (getArgs)
 import Text.PrettyPrint.HughesPJ (render)
 import Text.XML.HaXml.Types
@@ -24,10 +26,11 @@ mkTokens = Tokens . gentoks 0
 prettyXML ::  Document () -> String
 prettyXML = render . document 
 
+
 main :: IO ()
-main = do args <- getArgs
-          case args of
-               []    -> putStrLn "Please provide a file name."
-               (x:_) -> do input <- C.readFile x
-                           let xml = createXML $ tokenize' input
-                           putStrLn $ prettyXML xml
+main = do initGUI
+          Just xml <- xmlNew "gui/AnnotatorGUI.glade"
+          window <- xmlGetWidget xml castToWindow "mainWindow"
+          onDestroy window mainQuit
+          widgetShowAll window
+          mainGUI
