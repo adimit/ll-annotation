@@ -1,105 +1,105 @@
 <?xml version="1.0"?>
-<interface>
-  <requires lib="gtk+" version="2.16"/>
+<glade-interface>
+  <!-- interface-requires gtk+ 2.16 -->
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkWindow" id="main">
+  <widget class="GtkWindow" id="main">
     <property name="title" translatable="yes">Annotation Helper</property>
     <child>
-      <object class="GtkVBox" id="vbox1">
+      <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
         <property name="spacing">2</property>
         <child>
-          <object class="GtkMenuBar" id="menubar2">
+          <widget class="GtkMenuBar" id="menubar2">
             <property name="visible">True</property>
             <child>
-              <object class="GtkMenuItem" id="menuitem5">
+              <widget class="GtkMenuItem" id="menuitem5">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_File</property>
                 <property name="use_underline">True</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="menu4">
+                <child>
+                  <widget class="GtkMenu" id="menu4">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem11">
+                      <widget class="GtkImageMenuItem" id="imagemenuitem11">
                         <property name="label">gtk-new</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                      </object>
+                      </widget>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem12">
+                      <widget class="GtkImageMenuItem" id="imagemenuitem12">
                         <property name="label">gtk-open</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                      </object>
+                      </widget>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem13">
+                      <widget class="GtkImageMenuItem" id="imagemenuitem13">
                         <property name="label">gtk-save</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                      </object>
+                      </widget>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem14">
+                      <widget class="GtkImageMenuItem" id="imagemenuitem14">
                         <property name="label">gtk-save-as</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                      </object>
+                      </widget>
                     </child>
                     <child>
-                      <object class="GtkSeparatorMenuItem" id="separatormenuitem2">
+                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem2">
                         <property name="visible">True</property>
-                      </object>
+                      </widget>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem15">
+                      <widget class="GtkImageMenuItem" id="imagemenuitem15">
                         <property name="label">gtk-quit</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                      </object>
+                      </widget>
                     </child>
-                  </object>
+                  </widget>
                 </child>
-              </object>
+              </widget>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuHelp">
+              <widget class="GtkMenuItem" id="menuHelp">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_Help</property>
                 <property name="use_underline">True</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="menu6">
+                <child>
+                  <widget class="GtkMenu" id="menu6">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem20">
+                      <widget class="GtkImageMenuItem" id="imagemenuitem20">
                         <property name="label">gtk-about</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                      </object>
+                      </widget>
                     </child>
-                  </object>
+                  </widget>
                 </child>
-              </object>
+              </widget>
             </child>
-          </object>
+          </widget>
           <packing>
             <property name="expand">False</property>
             <property name="position">0</property>
           </packing>
         </child>
         <child>
-          <object class="GtkTextView" id="corpusView">
+          <widget class="GtkTextView" id="corpusView">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="editable">False</property>
-          </object>
+          </widget>
           <packing>
             <property name="position">1</property>
           </packing>
@@ -108,18 +108,16 @@
           <placeholder/>
         </child>
         <child>
-          <object class="GtkStatusbar" id="statusbar4">
+          <widget class="GtkStatusbar" id="statusbar4">
             <property name="visible">True</property>
             <property name="spacing">2</property>
-          </object>
+          </widget>
           <packing>
             <property name="expand">False</property>
             <property name="position">3</property>
           </packing>
         </child>
-      </object>
+      </widget>
     </child>
-  </object>
-  <object class="GtkTreeSelection" id="treeselection1"/>
-  <object class="GtkTreeSelection" id="treeselection2"/>
-</interface>
+  </widget>
+</glade-interface>
