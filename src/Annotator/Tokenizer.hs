@@ -1,4 +1,4 @@
-module Tokenizer 
+module Annotator.Tokenizer 
         (tokenize, tokenize') 
         where
 

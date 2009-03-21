@@ -1,8 +1,7 @@
-module Extsubset where
+module Annotator.DTD where
 
-import Text.XML.HaXml.Xml2Haskell
+import Text.XML.HaXml.XmlContent
 import Text.XML.HaXml.OneOfN
-import Char (isSpace)
 
 
 {-Type decls-}
@@ -94,46 +93,46 @@ data Token_Attrs = Token_Attrs
 
 {-Instance decls-}
 
+instance HTypeable Corpus where
+    toHType x = Defined "corpus" [] []
 instance XmlContent Corpus where
-    fromElem (CElem (Elem "corpus" [] c0):rest) =
-        (\(a,ca)->
-           (\(b,cb)->
-              (Just (Corpus a b), rest))
-           (definite fromElem "<errors>" "corpus" ca))
-        (definite fromElem "<tokens>" "corpus" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Corpus a b) =
-        [CElem (Elem "corpus" [] (toElem a ++ toElem b))]
+    toContents (Corpus a b) =
+        [CElem (Elem "corpus" [] (toContents a ++ toContents b)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["corpus"]
+        ; interior e $ return (Corpus) `apply` parseContents
+                       `apply` parseContents
+        } `adjustErr` ("in <corpus>, "++)
+
+instance HTypeable Errors where
+    toHType x = Defined "errors" [] []
 instance XmlContent Errors where
-    fromElem (CElem (Elem "errors" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Errors a), rest))
-        (many fromElem c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Errors a) =
-        [CElem (Elem "errors" [] (concatMap toElem a))]
+    toContents (Errors a) =
+        [CElem (Elem "errors" [] (concatMap toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["errors"]
+        ; interior e $ return (Errors) `apply` many parseContents
+        } `adjustErr` ("in <errors>, "++)
+
+instance HTypeable Tokens where
+    toHType x = Defined "tokens" [] []
 instance XmlContent Tokens where
-    fromElem (CElem (Elem "tokens" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Tokens a), rest))
-        (many fromElem c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Tokens a) =
-        [CElem (Elem "tokens" [] (concatMap toElem a))]
+    toContents (Tokens a) =
+        [CElem (Elem "tokens" [] (concatMap toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["tokens"]
+        ; interior e $ return (Tokens) `apply` many parseContents
+        } `adjustErr` ("in <tokens>, "++)
+
+instance HTypeable Errtoks where
+    toHType x = Defined "errtoks" [] []
 instance XmlContent Errtoks where
-    fromElem (CElem (Elem "errtoks" as []):rest) =
-        (Just (fromAttrs as), rest)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem as =
-        [CElem (Elem "errtoks" (toAttrs as) [])]
+    toContents as =
+        [CElem (Elem "errtoks" (toAttrs as) []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["errtoks"]
+        ; return (fromAttrs as)
+        } `adjustErr` ("in <errtoks>, "++)
 instance XmlAttributes Errtoks where
     fromAttrs as =
         Errtoks
@@ -142,68 +141,61 @@ instance XmlAttributes Errtoks where
     toAttrs v = catMaybes 
         [ toAttrFrStr "idx" (errtoksIdx v)
         ]
+
+instance HTypeable Error where
+    toHType x = Defined "error" [] []
 instance XmlContent Error where
-    fromElem (CElem (Elem "error" [] c0):rest) =
-        (\(a,ca)->
-           (\(b,cb)->
-              (\(c,cc)->
-                 (Just (Error a b c), rest))
-              (definite fromElem "<target>" "error" cb))
-           (definite fromElem "<type>" "error" ca))
-        (definite fromElem "<errtoks>" "error" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Error a b c) =
-        [CElem (Elem "error" [] (toElem a ++ toElem b ++ toElem c))]
+    toContents (Error a b c) =
+        [CElem (Elem "error" [] (toContents a ++ toContents b ++
+                                 toContents c)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["error"]
+        ; interior e $ return (Error) `apply` parseContents
+                       `apply` parseContents `apply` parseContents
+        } `adjustErr` ("in <error>, "++)
+
+instance HTypeable Type where
+    toHType x = Defined "type" [] []
 instance XmlContent Type where
-    fromElem (CElem (Elem "type" [] c0):rest) =
-        case (fromElem c0) of
-        (Just a,_) -> (Just (TypeForm a), rest)
-        (_,_) ->
-                case (fromElem c0) of
-                (Just a,_) -> (Just (TypeMorph a), rest)
-                (_,_) ->
-                        case (fromElem c0) of
-                        (Just a,_) -> (Just (TypeSyn a), rest)
-                        (_,_) ->
-                                case (fromElem c0) of
-                                (Just a,_) -> (Just (TypeLex a), rest)
-                                (_,_) ->
-                                        case (fromElem c0) of
-                                        (Just a,_) -> (Just (TypeGrammar a), rest)
-                                        (_,_) ->
-                                                case (fromElem c0) of
-                                                (Just a,_) -> (Just (TypeStyle a), rest)
-                                                (_,_) ->
-                                                        case (fromElem c0) of
-                                                        (Just a,_) -> (Just (TypeTypo a), rest)
-                                                        (_,_) ->
-                                                                case (fromElem c0) of
-                                                                (Just a,_) -> (Just (TypeUndef a), rest)
-                                                                (_,_) ->
-                                                                    (Nothing, c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (TypeForm a) = [CElem (Elem "type" [] (toElem a) )]
-    toElem (TypeMorph a) = [CElem (Elem "type" [] (toElem a) )]
-    toElem (TypeSyn a) = [CElem (Elem "type" [] (toElem a) )]
-    toElem (TypeLex a) = [CElem (Elem "type" [] (toElem a) )]
-    toElem (TypeGrammar a) = [CElem (Elem "type" [] (toElem a) )]
-    toElem (TypeStyle a) = [CElem (Elem "type" [] (toElem a) )]
-    toElem (TypeTypo a) = [CElem (Elem "type" [] (toElem a) )]
-    toElem (TypeUndef a) = [CElem (Elem "type" [] (toElem a) )]
+    toContents (TypeForm a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeMorph a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeSyn a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeLex a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeGrammar a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeStyle a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeTypo a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeUndef a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
+    parseContents = do 
+        { e@(Elem _ [] _) <- element ["type"]
+        ; interior e $ oneOf
+            [ return (TypeForm) `apply` parseContents
+            , return (TypeMorph) `apply` parseContents
+            , return (TypeSyn) `apply` parseContents
+            , return (TypeLex) `apply` parseContents
+            , return (TypeGrammar) `apply` parseContents
+            , return (TypeStyle) `apply` parseContents
+            , return (TypeTypo) `apply` parseContents
+            , return (TypeUndef) `apply` parseContents
+            ] `adjustErr` ("in <type>, "++)
+        }
+
+instance HTypeable Form where
+    toHType x = Defined "Form" [] []
 instance XmlContent Form where
-    fromElem (CElem (Elem "Form" as c0):rest) =
-        (\(a,ca)->
-           (Just (Form (fromAttrs as) a), rest))
-        (definite fromElem "<comment>" "Form" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Form as a) =
-        [CElem (Elem "Form" (toAttrs as) (toElem a))]
+    toContents (Form as a) =
+        [CElem (Elem "Form" (toAttrs as) (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["Form"]
+        ; interior e $ return (Form (fromAttrs as)) `apply` parseContents
+        } `adjustErr` ("in <Form>, "++)
 instance XmlAttributes Form_Attrs where
     fromAttrs as =
         Form_Attrs
@@ -212,6 +204,7 @@ instance XmlAttributes Form_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrTyp "cat" (formCat v)
         ]
+
 instance XmlAttrType Form_cat where
     fromAttrToTyp n (n',v)
         | n==n'     = translate (attr2str v)
@@ -227,16 +220,16 @@ instance XmlAttrType Form_cat where
     toAttrFrTyp n Form_cat_diacritic = Just (n, str2attr "diacritic")
     toAttrFrTyp n Form_cat_homonymy = Just (n, str2attr "homonymy")
     toAttrFrTyp n Form_cat_speling = Just (n, str2attr "speling")
+
+instance HTypeable Morph where
+    toHType x = Defined "Morph" [] []
 instance XmlContent Morph where
-    fromElem (CElem (Elem "Morph" as c0):rest) =
-        (\(a,ca)->
-           (Just (Morph (fromAttrs as) a), rest))
-        (definite fromElem "<comment>" "Morph" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Morph as a) =
-        [CElem (Elem "Morph" (toAttrs as) (toElem a))]
+    toContents (Morph as a) =
+        [CElem (Elem "Morph" (toAttrs as) (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["Morph"]
+        ; interior e $ return (Morph (fromAttrs as)) `apply` parseContents
+        } `adjustErr` ("in <Morph>, "++)
 instance XmlAttributes Morph_Attrs where
     fromAttrs as =
         Morph_Attrs
@@ -245,6 +238,7 @@ instance XmlAttributes Morph_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrTyp "cat" (morphCat v)
         ]
+
 instance XmlAttrType Morph_cat where
     fromAttrToTyp n (n',v)
         | n==n'     = translate (attr2str v)
@@ -256,16 +250,16 @@ instance XmlAttrType Morph_cat where
     toAttrFrTyp n Morph_cat_derivation = Just (n, str2attr "derivation")
     toAttrFrTyp n Morph_cat_inflection = Just (n, str2attr "inflection")
     toAttrFrTyp n Morph_cat_compounding = Just (n, str2attr "compounding")
+
+instance HTypeable Syn where
+    toHType x = Defined "Syn" [] []
 instance XmlContent Syn where
-    fromElem (CElem (Elem "Syn" as c0):rest) =
-        (\(a,ca)->
-           (Just (Syn (fromAttrs as) a), rest))
-        (definite fromElem "<comment>" "Syn" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Syn as a) =
-        [CElem (Elem "Syn" (toAttrs as) (toElem a))]
+    toContents (Syn as a) =
+        [CElem (Elem "Syn" (toAttrs as) (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["Syn"]
+        ; interior e $ return (Syn (fromAttrs as)) `apply` parseContents
+        } `adjustErr` ("in <Syn>, "++)
 instance XmlAttributes Syn_Attrs where
     fromAttrs as =
         Syn_Attrs
@@ -274,6 +268,7 @@ instance XmlAttributes Syn_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrTyp "cat" (synCat v)
         ]
+
 instance XmlAttrType Syn_cat where
     fromAttrToTyp n (n',v)
         | n==n'     = translate (attr2str v)
@@ -291,16 +286,16 @@ instance XmlAttrType Syn_cat where
     toAttrFrTyp n Syn_cat_wmissing = Just (n, str2attr "wmissing")
     toAttrFrTyp n Syn_cat_wredundant = Just (n, str2attr "wredundant")
     toAttrFrTyp n Syn_cat_cohesion = Just (n, str2attr "cohesion")
+
+instance HTypeable Lex where
+    toHType x = Defined "Lex" [] []
 instance XmlContent Lex where
-    fromElem (CElem (Elem "Lex" as c0):rest) =
-        (\(a,ca)->
-           (Just (Lex (fromAttrs as) a), rest))
-        (definite fromElem "<comment>" "Lex" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Lex as a) =
-        [CElem (Elem "Lex" (toAttrs as) (toElem a))]
+    toContents (Lex as a) =
+        [CElem (Elem "Lex" (toAttrs as) (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["Lex"]
+        ; interior e $ return (Lex (fromAttrs as)) `apply` parseContents
+        } `adjustErr` ("in <Lex>, "++)
 instance XmlAttributes Lex_Attrs where
     fromAttrs as =
         Lex_Attrs
@@ -309,6 +304,7 @@ instance XmlAttributes Lex_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrTyp "cat" (lexCat v)
         ]
+
 instance XmlAttrType Lex_cat where
     fromAttrToTyp n (n',v)
         | n==n'     = translate (attr2str v)
@@ -326,16 +322,17 @@ instance XmlAttrType Lex_cat where
     toAttrFrTyp n Lex_cat_verbcompl = Just (n, str2attr "verbcompl")
     toAttrFrTyp n Lex_cat_nouncompl = Just (n, str2attr "nouncompl")
     toAttrFrTyp n Lex_cat_prefab = Just (n, str2attr "prefab")
+
+instance HTypeable Grammar where
+    toHType x = Defined "Grammar" [] []
 instance XmlContent Grammar where
-    fromElem (CElem (Elem "Grammar" as c0):rest) =
-        (\(a,ca)->
-           (Just (Grammar (fromAttrs as) a), rest))
-        (definite fromElem "<comment>" "Grammar" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Grammar as a) =
-        [CElem (Elem "Grammar" (toAttrs as) (toElem a))]
+    toContents (Grammar as a) =
+        [CElem (Elem "Grammar" (toAttrs as) (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["Grammar"]
+        ; interior e $ return (Grammar (fromAttrs as))
+                       `apply` parseContents
+        } `adjustErr` ("in <Grammar>, "++)
 instance XmlAttributes Grammar_Attrs where
     fromAttrs as =
         Grammar_Attrs
@@ -344,6 +341,7 @@ instance XmlAttributes Grammar_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrTyp "cat" (grammarCat v)
         ]
+
 instance XmlAttrType Grammar_cat where
     fromAttrToTyp n (n',v)
         | n==n'     = translate (attr2str v)
@@ -367,16 +365,16 @@ instance XmlAttrType Grammar_cat where
     toAttrFrTyp n Grammar_cat_tense = Just (n, str2attr "tense")
     toAttrFrTyp n Grammar_cat_voice = Just (n, str2attr "voice")
     toAttrFrTyp n Grammar_cat_euphony = Just (n, str2attr "euphony")
+
+instance HTypeable Style where
+    toHType x = Defined "Style" [] []
 instance XmlContent Style where
-    fromElem (CElem (Elem "Style" as c0):rest) =
-        (\(a,ca)->
-           (Just (Style (fromAttrs as) a), rest))
-        (definite fromElem "<comment>" "Style" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Style as a) =
-        [CElem (Elem "Style" (toAttrs as) (toElem a))]
+    toContents (Style as a) =
+        [CElem (Elem "Style" (toAttrs as) (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["Style"]
+        ; interior e $ return (Style (fromAttrs as)) `apply` parseContents
+        } `adjustErr` ("in <Style>, "++)
 instance XmlAttributes Style_Attrs where
     fromAttrs as =
         Style_Attrs
@@ -385,6 +383,7 @@ instance XmlAttributes Style_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrTyp "cat" (styleCat v)
         ]
+
 instance XmlAttrType Style_cat where
     fromAttrToTyp n (n',v)
         | n==n'     = translate (attr2str v)
@@ -398,36 +397,37 @@ instance XmlAttrType Style_cat where
     toAttrFrTyp n Style_cat_heavy = Just (n, str2attr "heavy")
     toAttrFrTyp n Style_cat_politeness = Just (n, str2attr "politeness")
     toAttrFrTyp n Style_cat_idiom = Just (n, str2attr "idiom")
+
+instance HTypeable Typo where
+    toHType x = Defined "Typo" [] []
 instance XmlContent Typo where
-    fromElem (CElem (Elem "Typo" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Typo a), rest))
-        (definite fromElem "<comment>" "Typo" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Typo a) =
-        [CElem (Elem "Typo" [] (toElem a))]
+    toContents (Typo a) =
+        [CElem (Elem "Typo" [] (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["Typo"]
+        ; interior e $ return (Typo) `apply` parseContents
+        } `adjustErr` ("in <Typo>, "++)
+
+instance HTypeable Undef where
+    toHType x = Defined "Undef" [] []
 instance XmlContent Undef where
-    fromElem (CElem (Elem "Undef" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Undef a), rest))
-        (definite fromElem "<comment>" "Undef" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Undef a) =
-        [CElem (Elem "Undef" [] (toElem a))]
+    toContents (Undef a) =
+        [CElem (Elem "Undef" [] (toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["Undef"]
+        ; interior e $ return (Undef) `apply` parseContents
+        } `adjustErr` ("in <Undef>, "++)
+
+instance HTypeable Comment where
+    toHType x = Defined "comment" [] []
 instance XmlContent Comment where
-    fromElem (CElem (Elem "comment" as c0):rest) =
-        (\(a,ca)->
-           (Just (Comment (fromAttrs as) a), rest))
-        (definite fromText "text" "comment" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Comment as a) =
-        [CElem (Elem "comment" (toAttrs as) (toText a))]
+    toContents (Comment as a) =
+        [CElem (Elem "comment" (toAttrs as) (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["comment"]
+        ; interior e $ return (Comment (fromAttrs as))
+                       `apply` (text `onFail` return "")
+        } `adjustErr` ("in <comment>, "++)
 instance XmlAttributes Comment_Attrs where
     fromAttrs as =
         Comment_Attrs
@@ -436,26 +436,27 @@ instance XmlAttributes Comment_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrStr "author" (commentAuthor v)
         ]
+
+instance HTypeable Target where
+    toHType x = Defined "target" [] []
 instance XmlContent Target where
-    fromElem (CElem (Elem "target" [] c0):rest) =
-        (\(a,ca)->
-           (Just (Target a), rest))
-        (definite fromText "text" "target" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Target a) =
-        [CElem (Elem "target" [] (toText a))]
+    toContents (Target a) =
+        [CElem (Elem "target" [] (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["target"]
+        ; interior e $ return (Target) `apply` (text `onFail` return "")
+        } `adjustErr` ("in <target>, "++)
+
+instance HTypeable Token where
+    toHType x = Defined "token" [] []
 instance XmlContent Token where
-    fromElem (CElem (Elem "token" as c0):rest) =
-        (\(a,ca)->
-           (Just (Token (fromAttrs as) a), rest))
-        (definite fromText "text" "token" c0)
-    fromElem (CMisc _:rest) = fromElem rest
-    fromElem (CString _ s:rest) | all isSpace s = fromElem rest
-    fromElem rest = (Nothing, rest)
-    toElem (Token as a) =
-        [CElem (Elem "token" (toAttrs as) (toText a))]
+    toContents (Token as a) =
+        [CElem (Elem "token" (toAttrs as) (toText a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["token"]
+        ; interior e $ return (Token (fromAttrs as))
+                       `apply` (text `onFail` return "")
+        } `adjustErr` ("in <token>, "++)
 instance XmlAttributes Token_Attrs where
     fromAttrs as =
         Token_Attrs
@@ -464,6 +465,7 @@ instance XmlAttributes Token_Attrs where
     toAttrs v = catMaybes 
         [ toAttrFrStr "idx" (tokenIdx v)
         ]
+
 
 
 {-Done-}
