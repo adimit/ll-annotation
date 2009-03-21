@@ -2,6 +2,7 @@ module Annotator.Interface ( runGUI ) where
      
 import Annotator.Tokenizer
 import Annotator.DTD
+import Annotator.Interface.Constants
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Glade
 import System.Environment (getArgs)
@@ -29,14 +30,15 @@ prettyXML ::  Document () -> String
 prettyXML = render . document 
 
 -- helper function to associate all menu items with actions
-initMenu xml = do quitItem <- xmlGetWidget xml castToMenuItem "menuItemQuit"
-                  window <- xmlGetWidget xml castToWindow "mainWindow"
+initMenu xml = do quitItem <- xmlGetWidget xml castToMenuItem menuItemQuit
+                  openItem <- xmlGetWidget xml castToMenuItem menuItemOpen
+                  window <- xmlGetWidget xml castToWindow windowMain
                   afterActivateLeaf quitItem $ do widgetDestroy window
 
 runGUI :: IO ()
 runGUI = do initGUI
-            Just xml <- xmlNew "gui/AnnotatorGUI.glade"
-            window <- xmlGetWidget xml castToWindow "mainWindow"
+            Just xml <- xmlNew gladeSource
+            window <- xmlGetWidget xml castToWindow windowMain
             initMenu xml
             onDestroy window mainQuit
             widgetShowAll window
