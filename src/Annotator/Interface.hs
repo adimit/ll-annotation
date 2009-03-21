@@ -5,6 +5,7 @@ import Annotator.DTD
 import Annotator.Interface.Constants
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Glade
+import Graphics.UI.Gtk.Windows.Dialog
 import System.Environment (getArgs)
 import Text.PrettyPrint.HughesPJ (render)
 import Text.XML.HaXml.Types
@@ -28,18 +29,55 @@ mkTokens = Tokens . gentoks 0
 -- render an XML document
 prettyXML ::  Document () -> String
 prettyXML = render . document 
-
+                        
 -- helper function to associate all menu items with actions
-initMenu xml = do quitItem <- xmlGetWidget xml castToMenuItem menuItemQuit
-                  openItem <- xmlGetWidget xml castToMenuItem menuItemOpen
-                  window <- xmlGetWidget xml castToWindow windowMain
-                  afterActivateLeaf quitItem $ do widgetDestroy window
+initControls :: GladeXML -> IO ()
+initControls xml = do quitItem <- xmlGetWidget xml castToMenuItem menuItemQuit
+                      openItem <- xmlGetWidget xml castToMenuItem menuItemOpen
+                      window   <- xmlGetWidget xml castToWindow windowMain
+                      quitItem `afterActivateLeaf` do widgetDestroy window
+                      openItem `afterActivateLeaf` do fc <- constructOpenFileChooser window
+                                                      r <- dialogRun fc
+                                                      case r of
+                                                        ResponseAccept -> do 
+                                                          Just fn <- fileChooserGetFilename fc
+                                                          loadFile xml fn
+                                                        _              -> putStrLn "Cancelled"
+                                                      widgetHide fc
+                      return ()
 
+loadFile :: GladeXML -> String -> IO ()
+loadFile xml fn = do putStrLn $ "Opening File: " ++ fn
+                     ta <- xmlGetWidget xml castToTextView corpusView
+                     tb <- textViewGetBuffer ta
+                     content <- readFile fn
+                     textBufferSetText tb content
+
+
+
+
+constructOpenFileChooser :: Window -> IO FileChooserDialog
+constructOpenFileChooser w = do 
+       fc <- fileChooserDialogNew (Just "Open Corpus")  
+                                  (Just w) 
+                                  FileChooserActionOpen  
+                                  [("gtk-cancel",ResponseCancel),("gtk-open",ResponseAccept)]
+       fileChooserSetSelectMultiple fc False
+       ff <- xmlFileFilter
+       fileChooserAddFilter fc ff                  
+       return fc
+       
 runGUI :: IO ()
 runGUI = do initGUI
             Just xml <- xmlNew gladeSource
             window <- xmlGetWidget xml castToWindow windowMain
-            initMenu xml
+            initControls xml
             onDestroy window mainQuit
             widgetShowAll window
             mainGUI
+
+xmlFileFilter :: IO FileFilter
+xmlFileFilter = do ff <- fileFilterNew
+                   fileFilterSetName ff "XML files"
+                   fileFilterAddMimeType ff "text/xml"
+                   return ff
