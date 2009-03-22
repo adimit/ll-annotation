@@ -36,15 +36,20 @@ initControls xml = do quitItem <- xmlGetWidget xml castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget xml castToMenuItem menuItemOpen
                       window   <- xmlGetWidget xml castToWindow windowMain
                       quitItem `afterActivateLeaf` do widgetDestroy window
-                      openItem `afterActivateLeaf` do fc <- constructOpenFileChooser window
-                                                      r <- dialogRun fc
-                                                      case r of
-                                                        ResponseAccept -> do 
-                                                          Just fn <- fileChooserGetFilename fc
-                                                          loadFile xml fn
-                                                        _              -> putStrLn "Cancelled"
-                                                      widgetHide fc
+                      openItem `afterActivateLeaf` openFileAction window xml
                       return ()
+
+openFileAction :: Window -> GladeXML -> IO ()
+openFileAction window xml = do
+    fc <- constructOpenFileChooser window
+    r  <- dialogRun fc
+    case r of ResponseAccept -> do fn <- fileChooserGetFilename fc
+                                   case fn of
+                                        Just fn' -> loadFile xml fn'
+                                        Nothing  -> putStr ""
+              _ ->putStr "" -- any better way of no-op in IO ()?
+    widgetHide fc
+
 
 loadFile :: GladeXML -> String -> IO ()
 loadFile xml fn = do putStrLn $ "Opening File: " ++ fn
