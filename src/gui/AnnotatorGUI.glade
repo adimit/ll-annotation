@@ -72,10 +72,19 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkTextView" id="corpusView">
+          <widget class="GtkScrolledWindow" id="scrolledwindow1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="editable">False</property>
+            <property name="hscrollbar_policy">automatic</property>
+            <property name="vscrollbar_policy">automatic</property>
+            <child>
+              <widget class="GtkTextView" id="corpusView">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="editable">False</property>
+                <property name="wrap_mode">word</property>
+              </widget>
+            </child>
           </widget>
           <packing>
             <property name="position">1</property>
