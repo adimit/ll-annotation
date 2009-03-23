@@ -27,11 +27,12 @@ openFileAction :: Window -> GladeXML -> IO ()
 openFileAction window xml = do
     fc <- constructOpenFileChooser window
     r  <- dialogRun fc
-    case r of ResponseAccept -> do fn <- fileChooserGetFilename fc
-                                   case fn of
-                                        Just fn' -> loadFile xml fn'
-                                        Nothing  -> putStr ""
-              _ ->putStr "" -- any better way of no-op in IO ()?
+    case r of
+         ResponseAccept -> do fn <- fileChooserGetFilename fc
+                              case fn of
+                                   Just fn' -> loadFile xml fn'
+                                   Nothing  -> putStr ""
+         _ ->putStr "" -- any better way of no-op in IO ()?
     widgetHide fc
 
 loadFile :: GladeXML -> String -> IO ()
@@ -41,28 +42,28 @@ loadFile xml fn = do putStrLn $ "Opening File: " ++ fn
                      content <- readFile fn
                      let corpus = readXml content
                      case corpus of
-			  Left  s -> showError s
-			  Right s -> do tb `textBufferSetText` (xmlToTokenString s)
+                          Left  s -> showError s
+                          Right s -> do tb `textBufferSetText` (xmlToTokenString s)
 
 xmlToTokenString :: Corpus -> String
 xmlToTokenString (Corpus (Tokens xs) _)= tokenListToString xs
 
 tokenListToString :: [Token] -> String
 tokenListToString = concat . map tokenToString
-	where tokenToString (Token _ s) = s
+    where tokenToString (Token _ s) = s
 
 showError = undefined
 
 constructOpenFileChooser :: Window -> IO FileChooserDialog
 constructOpenFileChooser w = do 
-       fc <- fileChooserDialogNew (Just "Open Corpus")
-                                  (Just w) 
-                                  FileChooserActionOpen
-                                  [("gtk-cancel",ResponseCancel),("gtk-open",ResponseAccept)]
-       fileChooserSetSelectMultiple fc False
-       ff <- xmlFileFilter
-       fileChooserAddFilter fc ff
-       return fc
+    fc <- fileChooserDialogNew (Just "Open Corpus")
+                               (Just w)
+                               FileChooserActionOpen
+                               [("gtk-cancel",ResponseCancel),("gtk-open",ResponseAccept)]
+    fileChooserSetSelectMultiple fc False
+    ff <- xmlFileFilter
+    fileChooserAddFilter fc ff
+    return fc
 
 runGUI :: IO ()
 runGUI = do initGUI
