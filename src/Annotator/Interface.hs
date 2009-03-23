@@ -1,18 +1,11 @@
-module Annotator.Interface ( runGUI ) where
+module Annotator.Interface ( runGUI, runGUIWithFile ) where
 
-import Annotator.Tokenizer
 import Annotator.DTD
 import Annotator.Interface.Constants
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
-import System.Environment (getArgs)
-import Text.PrettyPrint.HughesPJ (render)
-import Text.XML.HaXml.Types
-import Text.XML.HaXml.Pretty (document)
-import Text.XML.HaXml.XmlContent (toXml)
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
-import qualified Data.ByteString.Lazy.Char8 as C
 
 -- helper function to associate all menu items with actions
 initControls :: GladeXML -> IO ()
@@ -65,17 +58,26 @@ constructOpenFileChooser w = do
     fileChooserAddFilter fc ff
     return fc
 
-runGUI :: IO ()
-runGUI = do initGUI
-            Just xml <- xmlNew gladeSource
-            window <- xmlGetWidget xml castToWindow windowMain
-            initControls xml
-            onDestroy window mainQuit
-            widgetShowAll window
-            mainGUI
-
 xmlFileFilter :: IO FileFilter
 xmlFileFilter = do ff <- fileFilterNew
                    fileFilterSetName ff "XML files"
                    fileFilterAddMimeType ff "text/xml"
                    return ff
+
+runGUI :: IO ()
+runGUI = do prepareGUI
+            mainGUI
+
+runGUIWithFile :: String -> IO ()
+runGUIWithFile fn = do xml <-  prepareGUI
+                       loadFile xml fn
+                       mainGUI
+
+prepareGUI :: IO GladeXML
+prepareGUI = do initGUI
+                Just xml <- xmlNew gladeSource
+                window <- xmlGetWidget xml castToWindow windowMain
+                initControls xml
+                onDestroy window mainQuit
+                widgetShowAll window
+                return xml
