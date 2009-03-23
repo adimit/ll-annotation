@@ -7,7 +7,7 @@ import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
 
--- helper function to associate all menu items with actions
+-- Helper function to associate all controls with actions
 initControls :: GladeXML -> IO ()
 initControls xml = do quitItem <- xmlGetWidget xml castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget xml castToMenuItem menuItemOpen
@@ -16,6 +16,7 @@ initControls xml = do quitItem <- xmlGetWidget xml castToMenuItem menuItemQuit
                       openItem `afterActivateLeaf` openFileAction window xml
                       return ()
 
+-- Queries the user for opening a file.
 openFileAction :: Window -> GladeXML -> IO ()
 openFileAction window xml = do
     fc <- constructOpenFileChooser window
@@ -28,6 +29,7 @@ openFileAction window xml = do
          _ ->putStr "" -- any better way of no-op in IO ()?
     widgetHide fc
 
+-- Load a corpus from a file and display it.
 loadFile :: GladeXML -> String -> IO ()
 loadFile xml fn = do putStrLn $ "Opening File: " ++ fn
                      ta <- xmlGetWidget xml castToTextView corpusView
@@ -38,15 +40,15 @@ loadFile xml fn = do putStrLn $ "Opening File: " ++ fn
                           Left  s -> showError s
                           Right s -> do tb `textBufferSetText` (xmlToTokenString s)
 
+-- Takes a corpus and returns a string representing the corpus' text in plain text.
 xmlToTokenString :: Corpus -> String
-xmlToTokenString (Corpus (Tokens xs) _)= tokenListToString xs
+xmlToTokenString (Corpus (Tokens xs) _)= concat . map tokenToString $ xs
+        where tokenToString (Token _ s) = s
 
-tokenListToString :: [Token] -> String
-tokenListToString = concat . map tokenToString
-    where tokenToString (Token _ s) = s
-
+-- Generic function to notify the user something bad has happened.
 showError = undefined
 
+-- Builds a GTK file Chooser to open files.
 constructOpenFileChooser :: Window -> IO FileChooserDialog
 constructOpenFileChooser w = do 
     fc <- fileChooserDialogNew (Just "Open Corpus")
@@ -58,21 +60,25 @@ constructOpenFileChooser w = do
     fileChooserAddFilter fc ff
     return fc
 
+-- Builds a GTK file filter to only allow XML documents.
 xmlFileFilter :: IO FileFilter
 xmlFileFilter = do ff <- fileFilterNew
                    fileFilterSetName ff "XML files"
                    fileFilterAddMimeType ff "text/xml"
                    return ff
 
+-- | Entry in to the GUI
 runGUI :: IO ()
 runGUI = do prepareGUI
             mainGUI
 
+-- | Entry in to the GUI, whilst opening a corpus file.
 runGUIWithFile :: String -> IO ()
 runGUIWithFile fn = do xml <-  prepareGUI
                        loadFile xml fn
                        mainGUI
 
+-- Common code used by GUI entry points, factored out. Returns the GladeXML of the main GUI.
 prepareGUI :: IO GladeXML
 prepareGUI = do initGUI
                 Just xml <- xmlNew gladeSource
