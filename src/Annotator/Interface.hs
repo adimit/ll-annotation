@@ -1,4 +1,19 @@
-module Annotator.Interface ( runGUI, runGUIWithFile ) where
+-- |
+-- Module : Annotator
+-- Copyright : 2009 Aleksandar Dimitrov
+-- License : BSD3
+--
+-- Maintainer : Aleksandar Dimitrov <aleks.dimitrov@gmail.com>
+-- Stability : provisional
+-- Portability : unportable
+-- 
+-- This module defines the graphical user interface for the Annotator.
+
+module Annotator.Interface
+       ( -- * GUI entry points  
+       runGUI
+       , runGUIWithFile 
+       ) where
 
 import Annotator.DTD
 import Annotator.Interface.Constants
@@ -67,6 +82,10 @@ xmlFileFilter = do ff <- fileFilterNew
                    fileFilterAddMimeType ff "text/xml"
                    return ff
 
+-- Initialize the program's widget's events, listeners, and event handlers.
+initWidgets :: GladeXML -> IO ()
+initWidgets xml = undefined
+
 -- | Entry in to the GUI
 runGUI :: IO ()
 runGUI = do prepareGUI
@@ -84,6 +103,7 @@ prepareGUI = do initGUI
                 Just xml <- xmlNew gladeSource
                 window <- xmlGetWidget xml castToWindow windowMain
                 initControls xml
+                initWidgets xml
                 onDestroy window mainQuit
                 widgetShowAll window
                 return xml
