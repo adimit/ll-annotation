@@ -1,0 +1,25 @@
+Name: Annotator
+Version: 0.0.1
+Synopsis: An annotation tool for learner language corpora.
+License: BSD3
+Author: Aleksandar Dimitrov
+Maintainer: Aleksandar Dimitrov <aleks.dimitrov@gmail.com>
+Build-Depends: base
+Cabal-Version: >=0.12
+build-type: Simple
+
+executable annotator
+    hs-source-dirs: src
+    main-is: Main.hs
+    other-modules: Annotator.Interface
+    ghc-options: -Wall -O2
+    ghc-prof-options: -prof -auto-all
+    build-depends: base, gtk >= 0.10, HaXml >= 1.19, glade >= 0.10
+
+executable text2corpus
+    hs-source-dirs: src/tools
+    main-is: TextToCorpus.hs
+    other-modules: Annotator.Tokenizer
+    ghc-options: -Wall -O2
+    ghc-prof-options: -prof -auto-all
+    build-depends: base, HaXml >= 1.19, bytestring, pretty
