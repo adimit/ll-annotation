@@ -13,21 +13,21 @@ initControls xml = do quitItem <- xmlGetWidget xml castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget xml castToMenuItem menuItemOpen
                       window   <- xmlGetWidget xml castToWindow windowMain
                       quitItem `afterActivateLeaf` do widgetDestroy window
-                      openItem `afterActivateLeaf` openFileAction window xml
+                      openItem `afterActivateLeaf` do fn <- openFileAction window
+                                                      case fn of
+                                                           (Just fn) -> loadFile xml fn
+                                                           _         -> return ()
                       return ()
 
 -- Queries the user for opening a file.
-openFileAction :: Window -> GladeXML -> IO ()
-openFileAction window xml = do
+openFileAction :: Window -> IO (Maybe FilePath)
+openFileAction window = do
     fc <- constructOpenFileChooser window
     r  <- dialogRun fc
-    case r of
-         ResponseAccept -> do fn <- fileChooserGetFilename fc
-                              case fn of
-                                   Just fn' -> loadFile xml fn'
-                                   Nothing  -> putStr ""
-         _ ->putStr "" -- any better way of no-op in IO ()?
     widgetHide fc
+    case r of
+         ResponseAccept -> fileChooserGetFilename fc
+         _              -> return Nothing
 
 -- Load a corpus from a file and display it.
 loadFile :: GladeXML -> String -> IO ()
