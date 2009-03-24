@@ -92,7 +92,7 @@ runGUI = do prepareGUI
             mainGUI
 
 -- | Entry in to the GUI, whilst opening a corpus file.
-runGUIWithFile :: String -> IO ()
+runGUIWithFile :: FilePath -> IO ()
 runGUIWithFile fn = do xml <-  prepareGUI
                        loadFile xml fn
                        mainGUI
