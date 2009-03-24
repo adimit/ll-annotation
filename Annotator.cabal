@@ -8,6 +8,14 @@ Build-Depends: base
 Cabal-Version: >=0.12
 build-type: Simple
 
+library
+    exposed-modules:
+        Annotator.DTD,
+        Annotator.Tokenizer
+    hs-source-dirs: src
+    ghc-options: -Wall -O2
+    build-depends: base, HaXml >= 1.19
+
 executable annotator
     hs-source-dirs: src
     main-is: Main.hs
@@ -17,9 +25,8 @@ executable annotator
     build-depends: base, gtk >= 0.10, HaXml >= 1.19, glade >= 0.10
 
 executable text2corpus
-    hs-source-dirs: src/tools
+    hs-source-dirs: src/tools, src
     main-is: TextToCorpus.hs
-    other-modules: Annotator.Tokenizer
     ghc-options: -Wall -O2
     ghc-prof-options: -prof -auto-all
     build-depends: base, HaXml >= 1.19, bytestring, pretty
