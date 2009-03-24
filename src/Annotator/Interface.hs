@@ -17,7 +17,9 @@ module Annotator.Interface
 
 import Annotator.DTD
 import Annotator.Interface.Constants
+import Control.Monad.Trans (liftIO)
 import Graphics.UI.Gtk
+import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
@@ -84,7 +86,28 @@ xmlFileFilter = do ff <- fileFilterNew
 
 -- Initialize the program's widget's events, listeners, and event handlers.
 initWidgets :: GladeXML -> IO ()
-initWidgets xml = undefined
+initWidgets xml = do tv <- xmlGetWidget xml castToTextView corpusView
+                     l  <- xmlGetWidget xml castToLabel "label1"
+                     tv `on` buttonPressEvent $ findContext tv l
+                     return ()
+
+findContext :: TextView -> Label -> EventM EButton Bool
+findContext tv l = do btn <- eventButton
+                      case btn of
+                           LeftButton -> do coords <- eventCoordinates
+                                            let (x,y) = truncCoordToInt coords
+                                            liftIO $ do bcrd <- tv `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
+                                                        iter <- uncurry (textViewGetIterAtLocation tv) $ bcrd
+                                                        iter' <- textIterCopy iter
+                                                        textIterBackwardChars iter 5
+                                                        textIterForwardChars iter' 5
+                                                        slice <- textIterGetSlice iter iter'
+                                                        l `labelSetText` slice
+                                                        return False
+                           _          -> return False
+
+truncCoordToInt :: (Double,Double) -> (Int,Int)
+truncCoordToInt (x,y) = (truncate x,truncate y)
 
 -- | Entry in to the GUI
 runGUI :: IO ()
