@@ -38,7 +38,7 @@ data TV = TV { tv :: TextView
 
 -- Takes a corpus and returns a string representing the corpus' text in plain text.
 xmlToTokenString :: Corpus -> String
-xmlToTokenString (Corpus (Tokens xs) _)= concat . map tokenToString $ xs
+xmlToTokenString (Corpus (Tokens xs) _)= concatMap tokenToString xs
         where tokenToString (Token _ s) = s
 
 -- Generic function to notify the user something bad has happened.
@@ -68,8 +68,8 @@ findContext gui l = do btn <- eventButton
                        case btn of
                             LeftButton -> do coords <- eventCoordinates
                                              let (x,y) = truncCoordToInt coords
-                                             liftIO $ do bcrd <- (tv (corpusView gui)) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
-                                                         iter <- uncurry (textViewGetIterAtLocation (tv(corpusView gui))) $ bcrd
+                                             liftIO $ do bcrd <- tv (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
+                                                         iter <- uncurry (textViewGetIterAtLocation (tv(corpusView gui))) bcrd
                                                          iter' <- textIterCopy iter
                                                          textIterBackwardChars iter 5
                                                          textIterForwardChars iter' 5
@@ -116,7 +116,7 @@ prepareGUI = do
 initControls :: Gui -> IO ()
 initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget (xml gui) castToMenuItem menuItemOpen
-                      quitItem `afterActivateLeaf` do widgetDestroy (window gui)
+                      quitItem `afterActivateLeaf` widgetDestroy (window gui)
                       openItem `afterActivateLeaf` do fn <- openFileAction gui
                                                       case fn of
                                                            (Just fn') -> loadFile gui fn'
@@ -141,12 +141,12 @@ loadFile gui fn = do l  <- xmlGetWidget (xml gui) castToLabel "label1"
                      let corpus = readXml content
                      case corpus of
                           Left  s -> showError $ "XML Parsing failed. " ++ s
-                          Right s -> do tb `textBufferSetText` (xmlToTokenString s)
+                          Right s -> tb `textBufferSetText` xmlToTokenString s
                      ref <- readIORef (i (corpusView gui))
                      case ref of
                           (Just i') -> signalDisconnect i'
                           Nothing   -> return ()
-                     connectId <- (tv (corpusView gui)) `on` buttonPressEvent $ findContext gui l
+                     connectId <- tv (corpusView gui) `on` buttonPressEvent $ findContext gui l
                      writeIORef (i (corpusView gui)) $ Just connectId
                      return ()
 
