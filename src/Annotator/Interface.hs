@@ -19,6 +19,8 @@ import Annotator.DTD
 import Annotator.Interface.Constants
 import Control.Monad.Trans (liftIO)
 import Data.IORef
+import Data.Map (Map)
+import qualified Data.Map as M
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.UI.Gtk.Glade
@@ -26,20 +28,22 @@ import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
 
 -- | GUI state
-data Gui = Gui { corpusView  :: TV -- ^ The corpusView
+data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
                , window      :: Window -- ^ The main window
                , xml         :: GladeXML -- ^ The underlying glade XML
-               , corpusClick :: Maybe (ConnectId TextView) -- ^ The onClick event on corpusView
+               , corpusClick :: IORef (Maybe (ConnectId TextView))
+               , tokens      :: IORef (Maybe TokenMap)
+               , curSelection:: IORef (Maybe [Token])
                }
 
-data TV = TV { tv :: TextView
-             , i :: IORef (Maybe (ConnectId TextView))
-             }            
+type TokenMap = Map Int Token
+
 
 -- Takes a corpus and returns a string representing the corpus' text in plain text.
-xmlToTokenString :: Corpus -> String
-xmlToTokenString (Corpus (Tokens xs) _)= concatMap tokenToString xs
-        where tokenToString (Token _ s) = s
+xmlToTokenString :: Corpus -> (String,TokenMap)
+xmlToTokenString = undefined
+--xmlToTokenString (Corpus (Tokens xs) _)= concatMap tokenToString xs
+ --       where tokenToString (Token _ s) = s
 
 -- Generic function to notify the user something bad has happened.
 showError ::  String -> IO ()
@@ -65,23 +69,27 @@ xmlFileFilter = do ff <- fileFilterNew
                    return ff
 
 findContext :: Gui -> Label -> EventM EButton Bool
-findContext gui l = do btn <- eventButton
-                       case btn of
-                            LeftButton -> do coords <- eventCoordinates
-                                             let (x,y) = truncCoordToInt coords
-                                             liftIO $ do bcrd <- tv (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
-                                                         iter <- uncurry (textViewGetIterAtLocation (tv(corpusView gui))) bcrd
-                                                         iter' <- textIterCopy iter
-                                                         textIterBackwardChars iter 5
-                                                         textIterForwardChars iter' 5
-                                                         slice <- textIterGetSlice iter iter'
-                                                         l `labelSetText` slice
-                                                         putStrLn slice
-                                                         return False
-                            _          -> return False
+findContext gui l =
+    do btn <- eventButton
+       case btn of
+           LeftButton -> do 
+               coords <- eventCoordinates
+               let (x,y) = truncCoordToInt coords
+               liftIO $ do bcrd <- (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
+                           iter <- uncurry (textViewGetIterAtLocation (corpusView gui)) bcrd
+                           iter' <- textIterCopy iter
+                           textIterBackwardChars iter 5
+                           textIterForwardChars iter' 5
+                           slice <- textIterGetSlice iter iter'
+                           l `labelSetText` slice
+                           putStrLn slice
+                           return False
+           _          -> return False
 
 truncCoordToInt :: (Double,Double) -> (Int,Int)
 truncCoordToInt (x,y) = (truncate x,truncate y)
+
+
 
 -- | Entry in to the GUI
 runGUI :: IO ()
@@ -107,8 +115,7 @@ prepareGUI = do
          Just gladeXml -> do w      <- xmlGetWidget gladeXml castToWindow windowMain
                              textView <- xmlGetWidget gladeXml castToTextView "corpusView"
                              nothingRef <- newIORef Nothing
-                             let gui = Gui { corpusView  = TV textView nothingRef
-                                           , corpusClick = Nothing
+                             let gui = Gui { corpusView  = textView
                                            , window      = w
                                            , xml         = gladeXml
                                            }
@@ -140,18 +147,24 @@ openFileAction gui = do
 
 -- Load a corpus from a file, display it, and set the appropriate events.
 loadFile :: Gui -> String -> IO ()
-loadFile gui fn = do l  <- xmlGetWidget (xml gui) castToLabel "label1"
-                     tb <- textViewGetBuffer (tv (corpusView gui))
-                     content <- readFile fn
-                     let corpus = readXml content
-                     case corpus of
-                          Left  s -> showError $ "XML Parsing failed. " ++ s
-                          Right s -> tb `textBufferSetText` xmlToTokenString s
-                     ref <- readIORef (i (corpusView gui))
-                     case ref of
-                          (Just i') -> signalDisconnect i'
-                          Nothing   -> return ()
-                     connectId <- tv (corpusView gui) `on` buttonPressEvent $ findContext gui l
-                     writeIORef (i (corpusView gui)) $ Just connectId
-                     return ()
+loadFile gui fn = do
+    l  <- xmlGetWidget (xml gui) castToLabel "label1"
+    tb <- textViewGetBuffer (corpusView gui)
+    content <- readFile fn
+    let corpus = readXml content
+    case corpus of
+         Left  s -> showError $ "XML Parsing failed. " ++ s
+         Right c -> do
+               let (text,toks) = xmlToTokenString c
+               tb `textBufferSetText` text
+               connectId <- corpusView gui `on` buttonPressEvent $  findContext gui l
+               updateRef (corpusClick gui) connectId (\(s::ConnectId TextView) -> signalDisconnect s)
+               return ()
 
+updateRef :: IORef (Maybe a) -> a -> (a -> IO ()) -> IO ()
+updateRef ref new f = do var <- readIORef ref
+                         case var of
+                              Just d -> f d
+                              Nothing -> return ()
+                         writeIORef ref $ Just new
+                         return ()
