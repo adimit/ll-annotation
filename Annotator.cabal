@@ -22,7 +22,7 @@ executable annotator
     other-modules: Annotator.Interface, Annotator.DTD
     ghc-options: -Wall -O2
     ghc-prof-options: -prof -auto-all
-    build-depends: base, gtk >= 0.10, HaXml >= 1.19, glade >= 0.10, mtl
+    build-depends: base, gtk >= 0.10, HaXml >= 1.19, glade >= 0.10, mtl, containers
 
 executable text2corpus
     hs-source-dirs: src/tools, src
