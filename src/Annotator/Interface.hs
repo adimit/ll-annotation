@@ -42,7 +42,8 @@ xmlToTokenString (Corpus (Tokens xs) _)= concatMap tokenToString xs
         where tokenToString (Token _ s) = s
 
 -- Generic function to notify the user something bad has happened.
-showError = undefined
+showError ::  String -> IO ()
+showError = putStrLn
 
 -- Builds a GTK file Chooser to open files.
 constructOpenFileChooser :: Gui -> IO FileChooserDialog
@@ -84,21 +85,25 @@ truncCoordToInt (x,y) = (truncate x,truncate y)
 
 -- | Entry in to the GUI
 runGUI :: IO ()
-runGUI = prepareGUI >> mainGUI
+runGUI = do gui <- prepareGUI 
+            case gui of
+                 Left s -> showError s
+                 Right _ -> mainGUI
 
 -- | Entry in to the GUI, whilst opening a corpus file.
 runGUIWithFile :: FilePath -> IO ()
 runGUIWithFile fn = do gui <-  prepareGUI
-                       loadFile gui fn
-                       mainGUI
+                       case gui of 
+                            Left s -> showError s
+                            Right g -> loadFile g fn >> mainGUI
 
 -- Common code used by GUI entry points, factored out. Returns the GladeXML of the main GUI.
-prepareGUI :: IO Gui
+prepareGUI :: IO (Either String Gui)
 prepareGUI = do
     initGUI
     mXml <- xmlNew gladeSource
     case mXml of
-         Nothing       -> showError $ "Invalid glade xml file " ++ gladeSource
+         Nothing       -> return $ Left ("Invalid glade xml file " ++ gladeSource)
          Just gladeXml -> do w      <- xmlGetWidget gladeXml castToWindow windowMain
                              textView <- xmlGetWidget gladeXml castToTextView "corpusView"
                              nothingRef <- newIORef Nothing
@@ -110,7 +115,7 @@ prepareGUI = do
                              initControls gui
                              onDestroy w mainQuit
                              widgetShowAll w
-                             return gui
+                             return $ Right gui
 
 -- Helper function to associate all controls with actions
 initControls :: Gui -> IO ()
