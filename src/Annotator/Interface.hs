@@ -141,16 +141,17 @@ runGUIWithFile fn = do gui <-  prepareGUI
                             Left s -> showError s
                             Right g -> loadFile g fn >> mainGUI
 
--- Common code used by GUI entry points, factored out. Returns the GladeXML of the main GUI.
+-- Common code used by GUI entry points. Returns the GladeXML of the main GUI.
 prepareGUI :: IO (Either String Gui)
 prepareGUI = do
     initGUI
     mXml <- xmlNew gladeSource
     case mXml of
          Nothing       -> return $ Left ("Invalid glade xml file " ++ gladeSource)
-         Just gladeXml -> do w      <- xmlGetWidget gladeXml castToWindow windowMain
-                             tl      <- xmlGetWidget gladeXml castToLabel "tokenLabel"
-                             textView <- xmlGetWidget gladeXml castToTextView "corpusView"
+         Just gladeXml -> do -- beware of ugliness ahead. This is a FIXME
+                             w       <- xmlGetWidget gladeXml castToWindow windowMain
+                             tl       <- xmlGetWidget gladeXml castToLabel "tokenLabel"
+                             textView  <- xmlGetWidget gladeXml castToTextView "corpusView"
                              nothingRef <- newIORef Nothing
                              nothingRef' <- newIORef Nothing
                              nothingRef'' <- newIORef Nothing
