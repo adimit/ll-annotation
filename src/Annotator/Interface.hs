@@ -19,7 +19,7 @@ import Annotator.DTD
 import Annotator.Interface.Constants
 import Control.Monad.Trans (liftIO)
 import Data.IORef
-import Data.List (foldl')
+import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
 import GHC.List hiding (span)
@@ -97,29 +97,36 @@ xmlFileFilter = do ff <- fileFilterNew
                    fileFilterAddMimeType ff "text/xml"
                    return ff
 
-findContext :: Gui -> Label -> EventM EButton Bool
-findContext gui l =
+findContext :: Gui -> EventM EButton Bool
+findContext gui =
     do btn <- eventButton
        case btn of
            LeftButton -> do 
                coords <- eventCoordinates
                let (x,y) = truncCoordToInt coords
-               liftIO $ do findToken l gui (x,y)
+               liftIO $ do findToken gui (x,y)
                            return False
            _          -> return False
        
 truncCoordToInt :: (Double,Double) -> (Int,Int)
 truncCoordToInt (x,y) = (truncate x,truncate y)
 
-findToken :: Label -> Gui -> (Int,Int) -> IO ()
-findToken l gui (x,y) = do
+findToken :: Gui -> (Int,Int) -> IO ()
+findToken gui (x,y) = do
         bcrd <- (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
         iter <- uncurry (textViewGetIterAtLocation (corpusView gui)) bcrd
         loc <- textIterGetOffset iter
         Just tmap <- readIORef (tokens gui)
         let Just token = (Point loc) `M.lookup` tmap
-        l `labelSetText` show token
-
+        ref <- readIORef (selectedTkn gui)
+        case ref of
+             Nothing -> writeIORef (selectedTkn gui) (Just [token])
+             Just toks -> if (not (elem token toks))
+                               then writeIORef (selectedTkn gui) (Just $ toks ++ [token])
+                               else writeIORef (selectedTkn gui) (Just $ delete token toks)
+        putTokensOnLabel gui
+                        
+                                      
 -- | Entry in to the GUI
 runGUI :: IO ()
 runGUI = do gui <- prepareGUI 
@@ -166,11 +173,15 @@ prepareGUI = do
 initControls :: Gui -> IO ()
 initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget (xml gui) castToMenuItem menuItemOpen
+                      clearBtn <- xmlGetWidget (xml gui) castToButton "clearButton"
                       quitItem `afterActivateLeaf` widgetDestroy (window gui)
                       openItem `afterActivateLeaf` do fn <- openFileAction gui
                                                       case fn of
                                                            (Just fn') -> loadFile gui fn'
                                                            _          -> return ()
+                      
+                      clearBtn `onClicked` do writeIORef (selectedTkn gui) (Just [])
+                                              putTokensOnLabel gui
                       return ()
 
 -- Queries the user for opening a file.
@@ -186,7 +197,6 @@ openFileAction gui = do
 -- Load a corpus from a file, display it, and set the appropriate events.
 loadFile :: Gui -> String -> IO ()
 loadFile gui fn = do
-    l  <- xmlGetWidget (xml gui) castToLabel "label1"
     tb <- textViewGetBuffer (corpusView gui)
     content <- readFile fn
     let corpus = readXml content
@@ -195,7 +205,7 @@ loadFile gui fn = do
          Right c -> do
                let (_,text,toks) = xmlToTokenString c
                tb `textBufferSetText` text
-               connectId <- corpusView gui `on` buttonPressEvent $ findContext gui l
+               connectId <- corpusView gui `on` buttonPressEvent $ findContext gui
                updateRef (corpusClick gui) connectId (\(s::ConnectId TextView) -> signalDisconnect s)
                updateRef (tokens gui) toks (const $ return ())
                return ()
