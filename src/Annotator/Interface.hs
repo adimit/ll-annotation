@@ -19,8 +19,10 @@ import Annotator.DTD
 import Annotator.Interface.Constants
 import Control.Monad.Trans (liftIO)
 import Data.IORef
+import Data.List (foldl')
 import Data.Map (Map)
 import qualified Data.Map as M
+import GHC.List hiding (span)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.UI.Gtk.Glade
@@ -31,22 +33,49 @@ import Text.XML.HaXml.XmlContent.Haskell (readXml)
 data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
                , window      :: Window -- ^ The main window
                , xml         :: GladeXML -- ^ The underlying glade XML
+               , tokenLabel  :: Label -- ^ The Label displaying tokens
                , corpusClick :: IORef (Maybe (ConnectId TextView))
                , tokens      :: IORef (Maybe TokenMap)
-               , curSelection:: IORef (Maybe [Token])
+               , selectedTkn :: IORef (Maybe [Token])
+               , currentErrs :: IORef (Maybe [Error])
                }
 
-type TokenMap = Map Int Token
+type TokenMap = Map Span Token
 
+data Span = Span Int Int
+          | Point Int 
+          deriving (Show)
+
+instance Eq Span where
+    x /= y = not $ x == y
+    (Span x1 s1) == (Span x2 s2) | x1 == x2 && s1 == s2 = True
+                                 | otherwise            = False
+    (Point p1)   == (Point p2)   | p1 == p2             = True
+                                 | otherwise            = False
+    (Span x s)   == (Point p)    | p >= x && p <= (x+s)   = True
+                                 | otherwise            = False
+    p@(Point _)  == s@(Span _ _) = s == p
+    
+instance Ord Span where
+    compare (Span x1 s1) (Span x2 s2) | x1 < x2 = LT
+                                      | x2 < x1 = GT
+                                      | x1 == x2 = compare s1 s2
+                                      | otherwise = error "This shouldn't happen."
+    compare (Span x s) (Point p) | p < x     = LT
+                                 | p > (x+s) = GT
+                                 | otherwise = EQ
+    compare p@(Point _) s@(Span _ _) = compare s p
+    compare (Point p1) (Point p2) = compare p1 p2
 
 -- Takes a corpus and returns a string representing the corpus' text in plain text.
-xmlToTokenString :: Corpus -> (String,TokenMap)
-xmlToTokenString = undefined
---xmlToTokenString (Corpus (Tokens xs) _)= concatMap tokenToString xs
- --       where tokenToString (Token _ s) = s
+xmlToTokenString :: Corpus -> (Int,String,TokenMap)
+xmlToTokenString (Corpus (Tokens xs) _) = foldl' f (0,"",M.empty) xs
+        where f !(!i,!s,!m) !token@(Token _ t) = 
+               let l = length t
+               in  (i+l,s++t,M.insert (Span i l) token m)
 
 -- Generic function to notify the user something bad has happened.
-showError ::  String -> IO ()
+showError :: String -> IO ()
 showError = putStrLn
 
 -- Builds a GTK file Chooser to open files.
@@ -75,21 +104,21 @@ findContext gui l =
            LeftButton -> do 
                coords <- eventCoordinates
                let (x,y) = truncCoordToInt coords
-               liftIO $ do bcrd <- (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
-                           iter <- uncurry (textViewGetIterAtLocation (corpusView gui)) bcrd
-                           iter' <- textIterCopy iter
-                           textIterBackwardChars iter 5
-                           textIterForwardChars iter' 5
-                           slice <- textIterGetSlice iter iter'
-                           l `labelSetText` slice
-                           putStrLn slice
+               liftIO $ do findToken l gui (x,y)
                            return False
            _          -> return False
-
+       
 truncCoordToInt :: (Double,Double) -> (Int,Int)
 truncCoordToInt (x,y) = (truncate x,truncate y)
 
-
+findToken :: Label -> Gui -> (Int,Int) -> IO ()
+findToken l gui (x,y) = do
+        bcrd <- (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
+        iter <- uncurry (textViewGetIterAtLocation (corpusView gui)) bcrd
+        loc <- textIterGetOffset iter
+        Just tmap <- readIORef (tokens gui)
+        let Just token = (Point loc) `M.lookup` tmap
+        l `labelSetText` show token
 
 -- | Entry in to the GUI
 runGUI :: IO ()
@@ -113,11 +142,20 @@ prepareGUI = do
     case mXml of
          Nothing       -> return $ Left ("Invalid glade xml file " ++ gladeSource)
          Just gladeXml -> do w      <- xmlGetWidget gladeXml castToWindow windowMain
+                             tl      <- xmlGetWidget gladeXml castToLabel "tokenLabel"
                              textView <- xmlGetWidget gladeXml castToTextView "corpusView"
                              nothingRef <- newIORef Nothing
+                             nothingRef' <- newIORef Nothing
+                             nothingRef'' <- newIORef Nothing
+                             nothingRef''' <- newIORef Nothing
                              let gui = Gui { corpusView  = textView
                                            , window      = w
                                            , xml         = gladeXml
+                                           , tokenLabel  = tl
+                                           , corpusClick = nothingRef
+                                           , tokens      = nothingRef'
+                                           , selectedTkn = nothingRef''
+                                           , currentErrs = nothingRef'''
                                            }
                              initControls gui
                              onDestroy w mainQuit
@@ -155,11 +193,18 @@ loadFile gui fn = do
     case corpus of
          Left  s -> showError $ "XML Parsing failed. " ++ s
          Right c -> do
-               let (text,toks) = xmlToTokenString c
+               let (_,text,toks) = xmlToTokenString c
                tb `textBufferSetText` text
-               connectId <- corpusView gui `on` buttonPressEvent $  findContext gui l
+               connectId <- corpusView gui `on` buttonPressEvent $ findContext gui l
                updateRef (corpusClick gui) connectId (\(s::ConnectId TextView) -> signalDisconnect s)
+               updateRef (tokens gui) toks (const $ return ())
                return ()
+    
+putTokensOnLabel :: Gui -> IO ()
+putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
+                          case ref of
+                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show tkns)
+                               Nothing     -> (tokenLabel gui) `labelSetText` ""
 
 updateRef :: IORef (Maybe a) -> a -> (a -> IO ()) -> IO ()
 updateRef ref new f = do var <- readIORef ref
