@@ -213,7 +213,7 @@ loadFile gui fn = do
 putTokensOnLabel :: Gui -> IO ()
 putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
                           case ref of
-                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show tkns)
+                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show (map render tkns))
                                Nothing     -> (tokenLabel gui) `labelSetText` ""
 
 updateRef :: IORef (Maybe a) -> a -> (a -> IO ()) -> IO ()
@@ -223,3 +223,6 @@ updateRef ref new f = do var <- readIORef ref
                               Nothing -> return ()
                          writeIORef ref $ Just new
                          return ()
+
+render :: Token -> String
+render (Token _ s) = s
