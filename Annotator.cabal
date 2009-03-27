@@ -20,9 +20,9 @@ executable annotator
     hs-source-dirs: src
     main-is: Main.hs
     other-modules: Annotator.Interface, Annotator.DTD
-    ghc-options: -Wall -O2
+    ghc-options: -Wall -O2 -fglasgow-exts
     ghc-prof-options: -prof -auto-all
-    extensions: ScopedTypeVariables
+    extensions: ScopedTypeVariables BangPatterns
     build-depends: base, gtk >= 0.10, HaXml >= 1.19, glade >= 0.10, mtl, containers
 
 executable text2corpus
