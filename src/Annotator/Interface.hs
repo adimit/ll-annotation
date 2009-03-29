@@ -35,7 +35,7 @@ xmlToTokenString :: Corpus -> (Int,String,TokenMap)
 xmlToTokenString (Corpus (Tokens (Tokens_Attrs slen) xs) _) = foldr f ((read slen),"",M.empty) xs
         where f !token@(Token _ t) !(!i,!s,!m) = 
                let l = length t
-                   i' = i-l
+                   i' = l `seq` (i-l)
                in  (i',t++s,M.insert (Span (i') l) token m)
 
 -- Generic function to notify the user something bad has happened.
