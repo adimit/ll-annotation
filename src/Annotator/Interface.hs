@@ -209,7 +209,7 @@ loadFile gui fn = do
                widgetSetSensitive si True
                let (_,text,toks) = xmlToTokenString c
                tb `textBufferSetText` text
-               connectId <- corpusView gui `on` buttonPressEvent $ findContext gui
+               connectId <- corpusView gui `on` buttonReleaseEvent $ findContext gui
                updateRef' (corpusClick gui) (maybeDisconnectOld connectId)
                updateRef (tokens gui) toks
                     where maybeDisconnectOld :: ConnectId TextView ->
