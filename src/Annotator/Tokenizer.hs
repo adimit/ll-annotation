@@ -18,7 +18,7 @@ token :: Char -> Char -> Bool
 token ' ' ' ' = True
 token '\'' ' ' = False
 token ' ' '\'' = False
-token x y = not . or $ map (oneOf (x,y)) [' ',',','.','!','?','\'','"','-']
+token x y = not . or $ map (oneOf (x,y)) [' ','\t','\n','\r',',','.','!','?','\'','"','-']
 
 -- Is one of (x,y) a z?
 oneOf :: (Char,Char) -> Char -> Bool
