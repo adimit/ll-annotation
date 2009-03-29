@@ -9,7 +9,11 @@ import Text.XML.HaXml.OneOfN
 data Corpus = Corpus Tokens Errors
             deriving (Eq,Show)
 newtype Errors = Errors [Error] 		deriving (Eq,Show)
-newtype Tokens = Tokens [Token] 		deriving (Eq,Show)
+data Tokens = Tokens Tokens_Attrs [Token]
+            deriving (Eq,Show)
+data Tokens_Attrs = Tokens_Attrs
+    { tokensCharlength :: String
+    } deriving (Eq,Show)
 data Errtoks = Errtoks
     { errtoksIdx :: String
     } deriving (Eq,Show)
@@ -75,12 +79,21 @@ instance XmlContent Errors where
 instance HTypeable Tokens where
     toHType x = Defined "tokens" [] []
 instance XmlContent Tokens where
-    toContents (Tokens a) =
-        [CElem (Elem "tokens" [] (concatMap toContents a)) ()]
+    toContents (Tokens as a) =
+        [CElem (Elem "tokens" (toAttrs as) (concatMap toContents a)) ()]
     parseContents = do
-        { e@(Elem _ [] _) <- element ["tokens"]
-        ; interior e $ return (Tokens) `apply` many parseContents
+        { e@(Elem _ as _) <- element ["tokens"]
+        ; interior e $ return (Tokens (fromAttrs as))
+                       `apply` many parseContents
         } `adjustErr` ("in <tokens>, "++)
+instance XmlAttributes Tokens_Attrs where
+    fromAttrs as =
+        Tokens_Attrs
+          { tokensCharlength = definiteA fromAttrToStr "tokens" "charlength" as
+          }
+    toAttrs v = catMaybes 
+        [ toAttrFrStr "charlength" (tokensCharlength v)
+        ]
 
 instance HTypeable Errtoks where
     toHType x = Defined "errtoks" [] []

@@ -32,10 +32,10 @@ import Text.XML.HaXml.XmlContent (fWriteXml)
 
 -- Takes a corpus and returns a string representing the corpus' text in plain text.
 xmlToTokenString :: Corpus -> (Int,String,TokenMap)
-xmlToTokenString (Corpus (Tokens xs) _) = foldl' f (0,"",M.empty) xs
-        where f !(!i,!s,!m) !token@(Token _ t) = 
+xmlToTokenString (Corpus (Tokens (Tokens_Attrs slen) xs) _) = foldr f ((read slen),"",M.empty) xs
+        where f !token@(Token _ t) !(!i,!s,!m) = 
                let l = length t
-               in  (i+l,s++t,M.insert (Span i l) token m)
+               in  (i-l,t++s,M.insert (Span (i-l) l) token m)
 
 -- Generic function to notify the user something bad has happened.
 showError :: String -> IO ()

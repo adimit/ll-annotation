@@ -16,7 +16,7 @@ createXML xs = toXml False (Corpus tokens (Errors []))
 
 -- Take tokenized text and turn it into a <tokens/> element
 mkTokens :: [String] -> Tokens
-mkTokens = Tokens . gentoks 0
+mkTokens toks = Tokens (Tokens_Attrs {tokensCharlength = show $ foldr (+) 0 (map length toks)} ) (gentoks 0 toks)
          where gentoks :: Int -> [String] -> [Token]
                gentoks _ [] = []
                gentoks x (t:ts) = (Token attrs t) : gentoks (x+1) ts
