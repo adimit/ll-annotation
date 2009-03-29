@@ -137,16 +137,38 @@ initControls :: Gui -> IO ()
 initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget (xml gui) castToMenuItem menuItemOpen
                       clearBtn <- xmlGetWidget (xml gui) castToButton "clearButton"
+                      spellBtn <- xmlGetWidget (xml gui) castToButton "errorSpelButton"
                       quitItem `afterActivateLeaf` widgetDestroy (window gui)
                       openItem `afterActivateLeaf` do fn <- openFileAction gui
                                                       case fn of
                                                            (Just fn') -> loadFile gui fn'
                                                            _          -> return ()
                       
-                      clearBtn `onClicked` do writeIORef (selectedTkn gui) (Just [])
-                                              putTokensOnLabel gui
+                      clearBtn `onClicked` clearBtnHandler gui
+                      spellBtn `onClicked` spellBtnHandler gui
                       return ()
 
+spellBtnHandler :: Gui -> IO ()
+spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
+                         case tks of
+                              Just ts -> do addToErrors gui e
+                                            clearBtnHandler gui
+                                            where e = (Error (Errtoks $ unwords ids)
+                                                             (TypeSpelling Spelling)
+                                                             (Context $ unwords ctx)
+                                                             Nothing
+                                                             Nothing)
+                                                  (ids,ctx) = tokenIdsAndContext ts
+                              Nothing -> showError "Pleae select some tokens first!"
+
+clearBtnHandler :: Gui -> IO ()
+clearBtnHandler gui =  do writeIORef (selectedTkn gui) (Just [])
+                          putTokensOnLabel gui
+
+tokenIdsAndContext :: [Token] -> ([String],[String])
+tokenIdsAndContext = foldr tokenId ([],[])
+           where tokenId :: Token -> ([String],[String]) -> ([String],[String])
+                 tokenId (Token (Token_Attrs idx) ctx) (idxs,ctxs) = (idx:idxs,ctx:ctxs)
 
 -- Queries the user for opening a file.
 openFileAction :: Gui -> IO (Maybe FilePath)
