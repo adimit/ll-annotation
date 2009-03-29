@@ -21,7 +21,6 @@ import Annotator.Interface.Types
 import Control.Monad.Trans (liftIO)
 import Data.IORef
 import Data.List
-import Data.Map (Map)
 import qualified Data.Map as M
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
@@ -29,17 +28,6 @@ import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
-
--- | GUI state
-data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
-               , window      :: Window -- ^ The main window
-               , xml         :: GladeXML -- ^ The underlying glade XML
-               , tokenLabel  :: Label -- ^ The Label displaying tokens
-               , corpusClick :: IORef (Maybe (ConnectId TextView))
-               , tokens      :: IORef (Maybe TokenMap)
-               , selectedTkn :: IORef (Maybe [Token])
-               , currentErrs :: IORef (Maybe [Error])
-               }
 
 -- Takes a corpus and returns a string representing the corpus' text in plain text.
 xmlToTokenString :: Corpus -> (Int,String,TokenMap)
@@ -137,7 +125,7 @@ prepareGUI = do
                                            , corpusClick = nothingRef
                                            , tokens      = nothingRef'
                                            , selectedTkn = nothingRef''
-                                           , currentErrs = nothingRef'''
+                                           , xmlDocument = nothingRef'''
                                            }
                              initControls gui
                              onDestroy w mainQuit
@@ -178,12 +166,12 @@ loadFile gui fn = do
     case corpus of
          Left  s -> showError $ "XML Parsing failed. " ++ s
          Right c -> do
+               updateRef (xmlDocument gui) c
                let (_,text,toks) = xmlToTokenString c
                tb `textBufferSetText` text
                connectId <- corpusView gui `on` buttonPressEvent $ findContext gui
-               updateRef (corpusClick gui) connectId (\(s::ConnectId TextView) -> signalDisconnect s)
-               updateRef (tokens gui) toks (const $ return ())
-               return ()
+               updateRef' (corpusClick gui) connectId (\(s::ConnectId TextView) -> signalDisconnect s)
+               updateRef (tokens gui) toks
     
 putTokensOnLabel :: Gui -> IO ()
 putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
@@ -191,13 +179,16 @@ putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
                                (Just tkns) -> (tokenLabel gui) `labelSetText` (show (map render tkns))
                                Nothing     -> (tokenLabel gui) `labelSetText` ""
 
-updateRef :: IORef (Maybe a) -> a -> (a -> IO ()) -> IO ()
-updateRef ref new f = do var <- readIORef ref
-                         case var of
-                              Just d -> f d
-                              Nothing -> return ()
-                         writeIORef ref $ Just new
-                         return ()
+updateRef' :: IORef (Maybe a) -> a -> (a -> IO ()) -> IO ()
+updateRef' ref new f = do var <- readIORef ref
+                          case var of
+                               Just d -> f d
+                               Nothing -> return ()
+                          writeIORef ref $ Just new
+                          return ()
+
+updateRef ::IORef (Maybe a) -> a -> IO ()
+updateRef ref payload = updateRef' ref payload (const $ return ())
 
 render :: Token -> String
 render (Token _ s) = s
