@@ -28,6 +28,7 @@ import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
+import Text.XML.HaXml.XmlContent (fWriteXml)
 
 -- Takes a corpus and returns a string representing the corpus' text in plain text.
 xmlToTokenString :: Corpus -> (Int,String,TokenMap)
@@ -139,14 +140,25 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       clearBtn <- xmlGetWidget (xml gui) castToButton "clearButton"
                       spellBtn <- xmlGetWidget (xml gui) castToButton "errorSpelButton"
                       quitItem `afterActivateLeaf` widgetDestroy (window gui)
-                      openItem `afterActivateLeaf` do fn <- openFileAction gui
-                                                      case fn of
-                                                           (Just fn') -> loadFile gui fn'
-                                                           _          -> return ()
-                      
+                      openItem `afterActivateLeaf` openItemHandler gui
                       clearBtn `onClicked` clearBtnHandler gui
                       spellBtn `onClicked` spellBtnHandler gui
                       return ()
+
+openItemHandler :: Gui -> IO ()
+openItemHandler gui = do fn <- openFileAction gui
+                         case fn of
+                              (Just fn') -> loadFile gui fn'
+                              _          -> return ()
+
+saveItemHandler :: Gui -> FilePath -> IO ()
+saveItemHandler gui fn = do ref <- readIORef (xmlDocument gui)
+                            case ref of
+                                 Just doc -> fWriteXml fn doc
+                                 Nothing  -> showError "Load a file first"
+
+saveAsItemHandler :: Gui -> IO ()
+saveAsItemHandler = undefined
 
 spellBtnHandler :: Gui -> IO ()
 spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
@@ -181,15 +193,18 @@ openFileAction gui = do
          _              -> return Nothing
 
 -- Load a corpus from a file, display it, and set the appropriate events.
-loadFile :: Gui -> String -> IO ()
+loadFile :: Gui -> FilePath -> IO ()
 loadFile gui fn = do
     tb <- textViewGetBuffer (corpusView gui)
-    content <- readFile fn
-    let corpus = readXml content
+    cntt <- readFile fn
+    let corpus = readXml cntt
     case corpus of
-         Left  s -> showError $ "XML Parsing failed. " ++ s
+         Left  s -> showError $ "XML Parsing failed: " ++ s
          Right c -> do
                updateRef (xmlDocument gui) c
+               si <- xmlGetWidget (xml gui) castToMenuItem "menuItemSave"
+               si `afterActivateLeaf` (saveItemHandler gui fn)
+               widgetSetSensitive si True
                let (_,text,toks) = xmlToTokenString c
                tb `textBufferSetText` text
                connectId <- corpusView gui `on` buttonPressEvent $ findContext gui
@@ -207,8 +222,10 @@ loadFile gui fn = do
 putTokensOnLabel :: Gui -> IO ()
 putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
                           case ref of
-                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show (map render tkns))
+                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show (map r tkns))
                                Nothing     -> (tokenLabel gui) `labelSetText` ""
+                               where  r :: Token -> String
+                                      r (Token _ s) = s
 
 updateRef  :: IORef (Maybe a) -> a -> IO ()
 updateRef ref payload = updateRef' ref (const $ return payload)
@@ -218,16 +235,15 @@ updateRef' ref act = do var <- readIORef ref
                         a'  <- act var
                         writeIORef ref (Just a')
 
-render :: Token -> String
-render (Token _ s) = s
-
 addToErrors :: Gui -> Error -> IO ()
 addToErrors gui err = do ref <- readIORef (xmlDocument gui)
                          case ref of
                               Just doc -> writeIORef (xmlDocument gui) (Just $ (ate err) doc)
                               Nothing  -> return ()
-                              where  ate e (Corpus ts (Errors es)) =
-                                            Corpus ts (Errors (e:es))
+                              where  ate e crp@(Corpus ts (Errors es)) =
+                                            if e `elem` es
+                                               then crp
+                                               else Corpus ts (Errors (e:es))
 
 removeFromErrors :: Gui -> Error -> IO ()
 removeFromErrors gui err = do ref <- readIORef (xmlDocument gui)
