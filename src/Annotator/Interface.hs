@@ -147,6 +147,7 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                                               putTokensOnLabel gui
                       return ()
 
+
 -- Queries the user for opening a file.
 openFileAction :: Gui -> IO (Maybe FilePath)
 openFileAction gui = do
@@ -172,8 +173,10 @@ loadFile gui fn = do
                connectId <- corpusView gui `on` buttonPressEvent $ findContext gui
                updateRef' (corpusClick gui) (maybeDisconnectOld connectId)
                updateRef (tokens gui) toks
-                    where maybeDisconnectOld :: ConnectId TextView -> Maybe (ConnectId TextView) -> IO (ConnectId TextView)
-                          maybeDisconnectOld cid payload = 
+                    where maybeDisconnectOld :: ConnectId TextView ->
+                                                Maybe (ConnectId TextView) ->
+                                                IO (ConnectId TextView)
+                          maybeDisconnectOld cid payload =
                               do case payload of
                                    Just cidOld -> signalDisconnect cidOld
                                    Nothing     -> return ()
@@ -185,14 +188,29 @@ putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
                                (Just tkns) -> (tokenLabel gui) `labelSetText` (show (map render tkns))
                                Nothing     -> (tokenLabel gui) `labelSetText` ""
 
-updateRef  :: IORef (Maybe a ) -> a -> IO ()
+updateRef  :: IORef (Maybe a) -> a -> IO ()
 updateRef ref payload = updateRef' ref (const $ return payload)
 
 updateRef' :: IORef (Maybe a) -> (Maybe a ->IO a) -> IO () 
 updateRef' ref act = do var <- readIORef ref
                         a'  <- act var
                         writeIORef ref (Just a')
-                        
 
 render :: Token -> String
 render (Token _ s) = s
+
+addToErrors :: Gui -> Error -> IO ()
+addToErrors gui err = do ref <- readIORef (xmlDocument gui)
+                         case ref of
+                              Just doc -> writeIORef (xmlDocument gui) (Just $ (ate err) doc)
+                              Nothing  -> return ()
+                              where  ate e (Corpus ts (Errors es)) =
+                                            Corpus ts (Errors (e:es))
+
+removeFromErrors :: Gui -> Error -> IO ()
+removeFromErrors gui err = do ref <- readIORef (xmlDocument gui)
+                              case ref of
+                                   Just doc -> writeIORef (xmlDocument gui) (Just $ (rfe err) doc)
+                                   Nothing  -> return ()
+                                   where  rfe e (Corpus ts (Errors es)) =
+                                                 Corpus ts (Errors (delete e es))
