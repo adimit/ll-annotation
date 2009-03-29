@@ -170,8 +170,14 @@ loadFile gui fn = do
                let (_,text,toks) = xmlToTokenString c
                tb `textBufferSetText` text
                connectId <- corpusView gui `on` buttonPressEvent $ findContext gui
-               updateRef' (corpusClick gui) connectId (\(s::ConnectId TextView) -> signalDisconnect s)
+               updateRef' (corpusClick gui) (maybeDisconnectOld connectId)
                updateRef (tokens gui) toks
+                    where maybeDisconnectOld :: ConnectId TextView -> Maybe (ConnectId TextView) -> IO (ConnectId TextView)
+                          maybeDisconnectOld cid payload = 
+                              do case payload of
+                                   Just cidOld -> signalDisconnect cidOld
+                                   Nothing     -> return ()
+                                 return cid
     
 putTokensOnLabel :: Gui -> IO ()
 putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
@@ -179,16 +185,14 @@ putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
                                (Just tkns) -> (tokenLabel gui) `labelSetText` (show (map render tkns))
                                Nothing     -> (tokenLabel gui) `labelSetText` ""
 
-updateRef' :: IORef (Maybe a) -> a -> (a -> IO ()) -> IO ()
-updateRef' ref new f = do var <- readIORef ref
-                          case var of
-                               Just d -> f d
-                               Nothing -> return ()
-                          writeIORef ref $ Just new
-                          return ()
+updateRef  :: IORef (Maybe a ) -> a -> IO ()
+updateRef ref payload = updateRef' ref (const $ return payload)
 
-updateRef ::IORef (Maybe a) -> a -> IO ()
-updateRef ref payload = updateRef' ref payload (const $ return ())
+updateRef' :: IORef (Maybe a) -> (Maybe a ->IO a) -> IO () 
+updateRef' ref act = do var <- readIORef ref
+                        a'  <- act var
+                        writeIORef ref (Just a')
+                        
 
 render :: Token -> String
 render (Token _ s) = s
