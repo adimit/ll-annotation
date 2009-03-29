@@ -1,6 +1,14 @@
 -- | A small module to contain all relevant data types for the Interface.
 
-module Types where
+module Annotator.Interface.Types where
+
+import Annotator.DTD
+import Data.IORef
+import Data.Map (Map)
+import qualified Data.Map as M
+import Graphics.UI.Gtk
+import Graphics.UI.Gtk.Glade
+import Annotator.DTD
 
 -- | GUI state
 data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
@@ -10,7 +18,7 @@ data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
                , corpusClick :: IORef (Maybe (ConnectId TextView))
                , tokens      :: IORef (Maybe TokenMap)
                , selectedTkn :: IORef (Maybe [Token])
-               , currentErrs :: IORef (Maybe [Error])
+               , xmlDocument :: IORef (Maybe Corpus)
                }
 
 type TokenMap = Map Span Token
