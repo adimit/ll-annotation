@@ -171,6 +171,7 @@
                           <widget class="GtkTextView" id="textView1">
                             <property name="height_request">50</property>
                             <property name="visible">True</property>
+                            <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
                           </widget>
                           <packing>
