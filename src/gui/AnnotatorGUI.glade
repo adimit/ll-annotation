@@ -197,11 +197,10 @@
                                 <property name="visible">True</property>
                                 <child>
                                   <widget class="GtkButton" id="errorSpelButton">
-                                    <property name="label" translatable="yes">_Speling</property>
+                                    <property name="label" translatable="yes">Speling</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_underline">True</property>
                                   </widget>
                                   <packing>
                                     <property name="position">0</property>
@@ -268,13 +267,7 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="label8">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Nothing to see here.</property>
-              </widget>
-              <packing>
-                <property name="position">2</property>
-              </packing>
+              <placeholder/>
             </child>
             <child>
               <widget class="GtkLabel" id="label3">
