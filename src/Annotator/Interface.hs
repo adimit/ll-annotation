@@ -90,8 +90,7 @@ findToken gui (x,y) = do
                                else writeIORef (selectedTkn gui) (Just $ delete token toks)
         putTokensOnLabel gui
                         
-                                      
--- | Entry in to the GUI
+-- | Entry to the GUI
 runGUI :: IO ()
 runGUI = do gui <- prepareGUI 
             case gui of
@@ -164,6 +163,8 @@ saveAsItemHandler = undefined
 spellBtnHandler :: Gui -> IO ()
 spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
                          case tks of
+                              Nothing -> showError "Please select some tokens first!"
+                              Just [] -> showError "Please select some tokens first!"
                               Just ts -> do addToErrors gui e
                                             clearBtnHandler gui
                                             where e = (Error (Errtoks $ unwords ids)
@@ -172,7 +173,7 @@ spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
                                                              Nothing
                                                              Nothing)
                                                   (ids,ctx) = tokenIdsAndContext ts
-                              Nothing -> showError "Pleae select some tokens first!"
+                           
 
 clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) (Just [])
