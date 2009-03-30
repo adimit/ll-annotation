@@ -17,8 +17,7 @@ data Tokens_Attrs = Tokens_Attrs
 data Errtoks = Errtoks
     { errtoksIdx :: String
     } deriving (Eq,Show)
-data Error = Error Errtoks Type Context (Maybe Target)
-                   (Maybe Comment)
+data Error = Error Errtoks Type (Maybe Target) (Maybe Comment)
            deriving (Eq,Show)
 data Type = TypeForm Form
           | TypeGrammar Grammar
@@ -44,7 +43,6 @@ data Omission_type = Omission_type_verb  |  Omission_type_subject
                       |  Omission_type_dirobject  |  Omission_type_indobject  | 
                      Omission_type_preposition  |  Omission_type_other
                    deriving (Eq,Show)
-newtype Context = Context String 		deriving (Eq,Show)
 newtype Comment = Comment String 		deriving (Eq,Show)
 newtype Target = Target String 		deriving (Eq,Show)
 data Token = Token Token_Attrs String
@@ -117,15 +115,14 @@ instance XmlAttributes Errtoks where
 instance HTypeable Error where
     toHType x = Defined "error" [] []
 instance XmlContent Error where
-    toContents (Error a b c d e) =
+    toContents (Error a b c d) =
         [CElem (Elem "error" [] (toContents a ++ toContents b ++
-                                 toContents c ++ maybe [] toContents d ++
-                                 maybe [] toContents e)) ()]
+                                 maybe [] toContents c ++ maybe [] toContents d)) ()]
     parseContents = do
         { e@(Elem _ [] _) <- element ["error"]
         ; interior e $ return (Error) `apply` parseContents
-                       `apply` parseContents `apply` parseContents
-                       `apply` optional parseContents `apply` optional parseContents
+                       `apply` parseContents `apply` optional parseContents
+                       `apply` optional parseContents
         } `adjustErr` ("in <error>, "++)
 
 instance HTypeable Type where
@@ -267,16 +264,6 @@ instance XmlAttrType Omission_type where
     toAttrFrTyp n Omission_type_indobject = Just (n, str2attr "indobject")
     toAttrFrTyp n Omission_type_preposition = Just (n, str2attr "preposition")
     toAttrFrTyp n Omission_type_other = Just (n, str2attr "other")
-
-instance HTypeable Context where
-    toHType x = Defined "context" [] []
-instance XmlContent Context where
-    toContents (Context a) =
-        [CElem (Elem "context" [] (toText a)) ()]
-    parseContents = do
-        { e@(Elem _ [] _) <- element ["context"]
-        ; interior e $ return (Context) `apply` (text `onFail` return "")
-        } `adjustErr` ("in <context>, "++)
 
 instance HTypeable Comment where
     toHType x = Defined "comment" [] []

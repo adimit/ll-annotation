@@ -4,7 +4,7 @@
 <!ELEMENT tokens (token*)>
 <!ATTLIST tokens charlength CDATA #REQUIRED >
 <!ELEMENT errtoks EMPTY>
-<!ELEMENT error (errtoks, type, context, target?, comment?)>
+<!ELEMENT error (errtoks, type, target?, comment?)>
 <!ELEMENT type (form|grammar|spelling|gibberish)>
 
 <!ELEMENT form (lexical|unknown)>
@@ -18,8 +18,6 @@
 <!ELEMENT omission EMPTY>
 
 <!ATTLIST omission type (verb|subject|dirobject|indobject|preposition|other) #REQUIRED>
-
-<!ELEMENT context (#PCDATA)>
 
 <!ELEMENT comment (#PCDATA)>
 
