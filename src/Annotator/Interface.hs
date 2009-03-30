@@ -155,7 +155,6 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
 
                       return ()
 
-
 grecBtnHandler :: Gui -> TreeView -> IO ()
 grecBtnHandler gui view = undefined
 
@@ -205,8 +204,7 @@ frecBtnHandler gui view = do row <- (treeViewGetSelection view >>= treeSelection
                                   Nothing -> showError "Please select some tokens first"
                                   Just [] -> showError "Please select some tokens first"
                                   Just ts -> case row of
-                                                  [path] -> do store <- formStore
-                                                               (EType _ content) <- store `treeStoreGetValue` path
+                                                  [path] -> do (EType _ content) <- (\s -> s `treeStoreGetValue` path) =<< formStore
                                                                case content of
                                                                     Nothing -> showError "Select a leaf."
                                                                     Just etype -> do addToErrors gui e
