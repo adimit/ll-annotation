@@ -24,21 +24,24 @@ data Type = TypeForm Form
           | TypeGrammar Grammar
           | TypeSpelling Spelling
           deriving (Eq,Show)
-data Form = Form
-    { formCat :: Form_cat
-    } deriving (Eq,Show)
-data Form_cat = Form_cat_agglutination  |  Form_cat_register  | 
-                Form_cat_diacritic  |  Form_cat_homonymy  |  Form_cat_speling
-              deriving (Eq,Show)
-data Grammar = Grammar
-    { grammarCat :: Grammar_cat
-    } deriving (Eq,Show)
-data Grammar_cat = Grammar_cat_class  |  Grammar_cat_aux  | 
-                   Grammar_cat_gender  |  Grammar_cat_mode  |  Grammar_cat_number  | 
-                   Grammar_cat_person  |  Grammar_cat_tense  |  Grammar_cat_voice  | 
-                   Grammar_cat_euphony
-                 deriving (Eq,Show)
+data Form = FormLexical Lexical
+          | FormUnknown Unknown
+          deriving (Eq,Show)
+data Grammar = GrammarAgreement Agreement
+             | GrammarOmission Omission
+             | GrammarUnknown Unknown
+             deriving (Eq,Show)
 data Spelling = Spelling 		deriving (Eq,Show)
+data Unknown = Unknown 		deriving (Eq,Show)
+data Lexical = Lexical 		deriving (Eq,Show)
+data Agreement = Agreement 		deriving (Eq,Show)
+data Omission = Omission
+    { omissionType :: Omission_type
+    } deriving (Eq,Show)
+data Omission_type = Omission_type_verb  |  Omission_type_subject
+                      |  Omission_type_dirobject  |  Omission_type_indobject  | 
+                     Omission_type_preosition  |  Omission_type_other
+                   deriving (Eq,Show)
 newtype Context = Context String 		deriving (Eq,Show)
 data Comment = Comment Comment_Attrs String
              deriving (Eq,Show)
@@ -146,90 +149,113 @@ instance XmlContent Type where
         }
 
 instance HTypeable Form where
-    toHType x = Defined "Form" [] []
+    toHType x = Defined "form" [] []
 instance XmlContent Form where
-    toContents as =
-        [CElem (Elem "Form" (toAttrs as) []) ()]
-    parseContents = do
-        { (Elem _ as []) <- element ["Form"]
-        ; return (fromAttrs as)
-        } `adjustErr` ("in <Form>, "++)
-instance XmlAttributes Form where
-    fromAttrs as =
-        Form
-          { formCat = definiteA fromAttrToTyp "Form" "cat" as
-          }
-    toAttrs v = catMaybes 
-        [ toAttrFrTyp "cat" (formCat v)
-        ]
-
-instance XmlAttrType Form_cat where
-    fromAttrToTyp n (n',v)
-        | n==n'     = translate (attr2str v)
-        | otherwise = Nothing
-      where translate "agglutination" = Just Form_cat_agglutination
-            translate "register" = Just Form_cat_register
-            translate "diacritic" = Just Form_cat_diacritic
-            translate "homonymy" = Just Form_cat_homonymy
-            translate "speling" = Just Form_cat_speling
-            translate _ = Nothing
-    toAttrFrTyp n Form_cat_agglutination = Just (n, str2attr "agglutination")
-    toAttrFrTyp n Form_cat_register = Just (n, str2attr "register")
-    toAttrFrTyp n Form_cat_diacritic = Just (n, str2attr "diacritic")
-    toAttrFrTyp n Form_cat_homonymy = Just (n, str2attr "homonymy")
-    toAttrFrTyp n Form_cat_speling = Just (n, str2attr "speling")
+    toContents (FormLexical a) =
+        [CElem (Elem "form" [] (toContents a) ) ()]
+    toContents (FormUnknown a) =
+        [CElem (Elem "form" [] (toContents a) ) ()]
+    parseContents = do 
+        { e@(Elem _ [] _) <- element ["form"]
+        ; interior e $ oneOf
+            [ return (FormLexical) `apply` parseContents
+            , return (FormUnknown) `apply` parseContents
+            ] `adjustErr` ("in <form>, "++)
+        }
 
 instance HTypeable Grammar where
-    toHType x = Defined "Grammar" [] []
+    toHType x = Defined "grammar" [] []
 instance XmlContent Grammar where
-    toContents as =
-        [CElem (Elem "Grammar" (toAttrs as) []) ()]
+    toContents (GrammarAgreement a) =
+        [CElem (Elem "grammar" [] (toContents a) ) ()]
+    toContents (GrammarOmission a) =
+        [CElem (Elem "grammar" [] (toContents a) ) ()]
+    toContents (GrammarUnknown a) =
+        [CElem (Elem "grammar" [] (toContents a) ) ()]
+    parseContents = do 
+        { e@(Elem _ [] _) <- element ["grammar"]
+        ; interior e $ oneOf
+            [ return (GrammarAgreement) `apply` parseContents
+            , return (GrammarOmission) `apply` parseContents
+            , return (GrammarUnknown) `apply` parseContents
+            ] `adjustErr` ("in <grammar>, "++)
+        }
+
+instance HTypeable Spelling where
+    toHType x = Defined "spelling" [] []
+instance XmlContent Spelling where
+    toContents Spelling =
+        [CElem (Elem "spelling" [] []) ()]
     parseContents = do
-        { (Elem _ as []) <- element ["Grammar"]
+        { (Elem _ as []) <- element ["spelling"]
+        ; return Spelling
+        } `adjustErr` ("in <spelling>, "++)
+
+instance HTypeable Unknown where
+    toHType x = Defined "unknown" [] []
+instance XmlContent Unknown where
+    toContents Unknown =
+        [CElem (Elem "unknown" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["unknown"]
+        ; return Unknown
+        } `adjustErr` ("in <unknown>, "++)
+
+instance HTypeable Lexical where
+    toHType x = Defined "lexical" [] []
+instance XmlContent Lexical where
+    toContents Lexical =
+        [CElem (Elem "lexical" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["lexical"]
+        ; return Lexical
+        } `adjustErr` ("in <lexical>, "++)
+
+instance HTypeable Agreement where
+    toHType x = Defined "agreement" [] []
+instance XmlContent Agreement where
+    toContents Agreement =
+        [CElem (Elem "agreement" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["agreement"]
+        ; return Agreement
+        } `adjustErr` ("in <agreement>, "++)
+
+instance HTypeable Omission where
+    toHType x = Defined "omission" [] []
+instance XmlContent Omission where
+    toContents as =
+        [CElem (Elem "omission" (toAttrs as) []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["omission"]
         ; return (fromAttrs as)
-        } `adjustErr` ("in <Grammar>, "++)
-instance XmlAttributes Grammar where
+        } `adjustErr` ("in <omission>, "++)
+instance XmlAttributes Omission where
     fromAttrs as =
-        Grammar
-          { grammarCat = definiteA fromAttrToTyp "Grammar" "cat" as
+        Omission
+          { omissionType = definiteA fromAttrToTyp "omission" "type" as
           }
     toAttrs v = catMaybes 
-        [ toAttrFrTyp "cat" (grammarCat v)
+        [ toAttrFrTyp "type" (omissionType v)
         ]
 
-instance XmlAttrType Grammar_cat where
+instance XmlAttrType Omission_type where
     fromAttrToTyp n (n',v)
         | n==n'     = translate (attr2str v)
         | otherwise = Nothing
-      where translate "class" = Just Grammar_cat_class
-            translate "aux" = Just Grammar_cat_aux
-            translate "gender" = Just Grammar_cat_gender
-            translate "mode" = Just Grammar_cat_mode
-            translate "number" = Just Grammar_cat_number
-            translate "person" = Just Grammar_cat_person
-            translate "tense" = Just Grammar_cat_tense
-            translate "voice" = Just Grammar_cat_voice
-            translate "euphony" = Just Grammar_cat_euphony
+      where translate "verb" = Just Omission_type_verb
+            translate "subject" = Just Omission_type_subject
+            translate "dirobject" = Just Omission_type_dirobject
+            translate "indobject" = Just Omission_type_indobject
+            translate "preosition" = Just Omission_type_preosition
+            translate "other" = Just Omission_type_other
             translate _ = Nothing
-    toAttrFrTyp n Grammar_cat_class = Just (n, str2attr "class")
-    toAttrFrTyp n Grammar_cat_aux = Just (n, str2attr "aux")
-    toAttrFrTyp n Grammar_cat_gender = Just (n, str2attr "gender")
-    toAttrFrTyp n Grammar_cat_mode = Just (n, str2attr "mode")
-    toAttrFrTyp n Grammar_cat_number = Just (n, str2attr "number")
-    toAttrFrTyp n Grammar_cat_person = Just (n, str2attr "person")
-    toAttrFrTyp n Grammar_cat_tense = Just (n, str2attr "tense")
-    toAttrFrTyp n Grammar_cat_voice = Just (n, str2attr "voice")
-    toAttrFrTyp n Grammar_cat_euphony = Just (n, str2attr "euphony")
-
-instance HTypeable Spelling where
-    toHType x = Defined "Spelling" [] []
-instance XmlContent Spelling where
-    toContents Spelling =
-        [CElem (Elem "Spelling" [] []) ()]
-    parseContents = do
-        { (Elem _ as []) <- element ["Spelling"]
-        ; return Spelling
-        } `adjustErr` ("in <Spelling>, "++)
+    toAttrFrTyp n Omission_type_verb = Just (n, str2attr "verb")
+    toAttrFrTyp n Omission_type_subject = Just (n, str2attr "subject")
+    toAttrFrTyp n Omission_type_dirobject = Just (n, str2attr "dirobject")
+    toAttrFrTyp n Omission_type_indobject = Just (n, str2attr "indobject")
+    toAttrFrTyp n Omission_type_preosition = Just (n, str2attr "preosition")
+    toAttrFrTyp n Omission_type_other = Just (n, str2attr "other")
 
 instance HTypeable Context where
     toHType x = Defined "context" [] []

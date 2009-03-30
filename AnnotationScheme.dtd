@@ -7,11 +7,16 @@
 <!ELEMENT error (errtoks, type, context, target?, comment?)>
 <!ELEMENT type (Form|Grammar|Spelling)>
 
-<!ELEMENT Form EMPTY>
-<!ATTLIST Form cat (agglutination|register|diacritic|homonymy|speling) #REQUIRED>
-<!ELEMENT Grammar EMPTY>
-<!ATTLIST Grammar cat (class|aux|gender|mode|number|person|tense|voice|euphony) #REQUIRED>
-<!ELEMENT Spelling EMPTY>
+<!ELEMENT form (lexical|unknown)>
+<!ELEMENT grammar (agreement|omission|unknown)>
+<!ELEMENT spelling EMPTY>
+
+<!ELEMENT unknown EMPTY>
+<!ELEMENT lexical EMPTY>
+<!ELEMENT agreement EMPTY>
+<!ELEMENT omission EMPTY>
+
+<!ATTLIST omission type (verb|subject|dirobject|indobject|preosition|other) #REQUIRED>
 
 <!ELEMENT context (#PCDATA) >
 
