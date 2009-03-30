@@ -33,7 +33,7 @@ instance Eq Span where
                                  | otherwise            = False
     (Point p1)   == (Point p2)   | p1 == p2             = True
                                  | otherwise            = False
-    (Span x s)   == (Point p)    | p >= x && p < (x+s)   = True
+    (Span x s)   == (Point p)    | p >= x && p < (x+s)  = True
                                  | otherwise            = False
     p@(Point _)  == s@(Span _ _) = s == p
     
@@ -47,3 +47,8 @@ instance Ord Span where
                                  | otherwise = EQ
     compare p@(Point _) s@(Span _ _) = compare s p
     compare (Point p1) (Point p2) = compare p1 p2
+
+instance Ord Token where
+    compare (Token (Token_Attrs t1) _) (Token (Token_Attrs t2) _) = compare (f t1) (f t2)
+                    where f :: String -> Int
+                          f = read . (drop 1)

@@ -224,7 +224,7 @@ loadFile gui fn = do
 putTokensOnLabel :: Gui -> IO ()
 putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
                           case ref of
-                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show (map r tkns))
+                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show $ map r (sort tkns))
                                Nothing     -> (tokenLabel gui) `labelSetText` ""
                                where  r :: Token -> String
                                       r (Token _ s) = s
