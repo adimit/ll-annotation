@@ -163,9 +163,10 @@
                                 <property name="visible">True</property>
                                 <property name="orientation">vertical</property>
                                 <child>
-                                  <widget class="GtkTreeView" id="treeview1">
+                                  <widget class="GtkTreeView" id="formView">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="hover_expand">True</property>
                                   </widget>
                                   <packing>
                                     <property name="position">0</property>
@@ -207,6 +208,7 @@
                                   <widget class="GtkTreeView" id="grammarView">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
+                                    <property name="hover_expand">True</property>
                                   </widget>
                                   <packing>
                                     <property name="position">0</property>
@@ -239,7 +241,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkButton" id="grammarRecordButto">
+                                      <widget class="GtkButton" id="grammarRecordButton">
                                         <property name="label" translatable="yes">gtk-media-record</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>

@@ -17,6 +17,7 @@ module Annotator.Interface
 
 import Annotator.DTD
 import Annotator.Interface.Constants
+import Annotator.Interface.Models
 import Annotator.Interface.Types
 import Control.Monad.Trans (liftIO)
 import Data.IORef
@@ -28,7 +29,7 @@ import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
-import Text.XML.HaXml.XmlContent (fWriteXml)
+import Text.XML.HaXml.XmlContent (XmlContent, fWriteXml)
 
 -- Takes a corpus and returns a string representing the corpus' text in plain text.
 xmlToTokenString :: Corpus -> (Int,String,TokenMap)
@@ -143,7 +144,31 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       openItem `afterActivateLeaf` openItemHandler gui
                       clearBtn `onClicked` clearBtnHandler gui
                       spellBtn `onClicked` spellBtnHandler gui
+                      grmview  <- xmlGetWidget (xml gui) castToTreeView "grammarView"
+                      frmview  <- xmlGetWidget (xml gui) castToTreeView "formView"
+                      (initTreeView grmview) =<< grammarStore
+                      (initTreeView frmview) =<< formStore
+                      frecBtn <- xmlGetWidget (xml gui) castToButton "formRecordButton"
+                      grecBtn <- xmlGetWidget (xml gui) castToButton "grammarRecordButton"
+                      frecBtn `onClicked` frecBtnHandler gui frmview
+                      grecBtn `onClicked` grecBtnHandler gui grmview
+
                       return ()
+
+
+grecBtnHandler :: Gui -> TreeView -> IO ()
+grecBtnHandler gui view = undefined
+
+initTreeView :: (XmlContent a) => TreeView -> TreeStore (EType a) -> IO ()
+initTreeView view model =  do
+                        view `treeViewSetModel` model
+                        view `treeViewSetHeadersVisible` False
+                        column <- treeViewColumnNew
+                        renderer <- cellRendererTextNew
+                        cellLayoutPackStart column renderer True
+                        cellLayoutSetAttributes column renderer model $ \row -> [cellText := name row]
+                        view `treeViewAppendColumn` column
+                        return ()
 
 openItemHandler :: Gui -> IO ()
 openItemHandler gui = do fn <- openFileAction gui
@@ -169,20 +194,37 @@ spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
                                             clearBtnHandler gui
                                             where e = (Error (Errtoks $ unwords ids)
                                                              (TypeSpelling Spelling)
-                                                             (Context $ unwords ctx)
                                                              Nothing
                                                              Nothing)
-                                                  (ids,ctx) = tokenIdsAndContext ts
+                                                  ids = tokenIds ts
                            
+frecBtnHandler :: Gui -> TreeView -> IO ()
+frecBtnHandler gui view = do row <- (treeViewGetSelection view >>= treeSelectionGetSelectedRows)
+                             tks <- readIORef (selectedTkn gui)
+                             case tks of
+                                  Nothing -> showError "Please select some tokens first"
+                                  Just [] -> showError "Please select some tokens first"
+                                  Just ts -> case row of
+                                                  [path] -> do store <- formStore
+                                                               (EType _ content) <- store `treeStoreGetValue` path
+                                                               case content of
+                                                                    Nothing -> showError "Select a leaf."
+                                                                    Just etype -> do addToErrors gui e
+                                                                                     clearBtnHandler gui
+                                                                                     where e = (Error (Errtoks $ unwords . tokenIds $ ts)
+                                                                                                      (TypeForm etype)
+                                                                                                       Nothing
+                                                                                                       Nothing)
+                                                  _ -> showError "Please select one item." 
 
 clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) (Just [])
                           putTokensOnLabel gui
 
-tokenIdsAndContext :: [Token] -> ([String],[String])
-tokenIdsAndContext = foldr tokenId ([],[])
-           where tokenId :: Token -> ([String],[String]) -> ([String],[String])
-                 tokenId (Token (Token_Attrs idx) ctx) (idxs,ctxs) = (idx:idxs,ctx:ctxs)
+tokenIds :: [Token] -> [String]
+tokenIds = map tokenId
+           where tokenId :: Token -> (String)
+                 tokenId (Token (Token_Attrs idx) _) = idx
 
 -- Queries the user for opening a file.
 openFileAction :: Gui -> IO (Maybe FilePath)
