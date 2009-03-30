@@ -23,6 +23,7 @@ data Error = Error Errtoks Type Context (Maybe Target)
 data Type = TypeForm Form
           | TypeGrammar Grammar
           | TypeSpelling Spelling
+          | TypeGibberish Gibberish
           deriving (Eq,Show)
 data Form = FormLexical Lexical
           | FormUnknown Unknown
@@ -32,6 +33,7 @@ data Grammar = GrammarAgreement Agreement
              | GrammarUnknown Unknown
              deriving (Eq,Show)
 data Spelling = Spelling 		deriving (Eq,Show)
+data Gibberish = Gibberish 		deriving (Eq,Show)
 data Unknown = Unknown 		deriving (Eq,Show)
 data Lexical = Lexical 		deriving (Eq,Show)
 data Agreement = Agreement 		deriving (Eq,Show)
@@ -40,14 +42,10 @@ data Omission = Omission
     } deriving (Eq,Show)
 data Omission_type = Omission_type_verb  |  Omission_type_subject
                       |  Omission_type_dirobject  |  Omission_type_indobject  | 
-                     Omission_type_preosition  |  Omission_type_other
+                     Omission_type_preposition  |  Omission_type_other
                    deriving (Eq,Show)
 newtype Context = Context String 		deriving (Eq,Show)
-data Comment = Comment Comment_Attrs String
-             deriving (Eq,Show)
-data Comment_Attrs = Comment_Attrs
-    { commentAuthor :: String
-    } deriving (Eq,Show)
+newtype Comment = Comment String 		deriving (Eq,Show)
 newtype Target = Target String 		deriving (Eq,Show)
 data Token = Token Token_Attrs String
            deriving (Eq,Show)
@@ -139,12 +137,15 @@ instance XmlContent Type where
         [CElem (Elem "type" [] (toContents a) ) ()]
     toContents (TypeSpelling a) =
         [CElem (Elem "type" [] (toContents a) ) ()]
+    toContents (TypeGibberish a) =
+        [CElem (Elem "type" [] (toContents a) ) ()]
     parseContents = do 
         { e@(Elem _ [] _) <- element ["type"]
         ; interior e $ oneOf
             [ return (TypeForm) `apply` parseContents
             , return (TypeGrammar) `apply` parseContents
             , return (TypeSpelling) `apply` parseContents
+            , return (TypeGibberish) `apply` parseContents
             ] `adjustErr` ("in <type>, "++)
         }
 
@@ -190,6 +191,16 @@ instance XmlContent Spelling where
         { (Elem _ as []) <- element ["spelling"]
         ; return Spelling
         } `adjustErr` ("in <spelling>, "++)
+
+instance HTypeable Gibberish where
+    toHType x = Defined "gibberish" [] []
+instance XmlContent Gibberish where
+    toContents Gibberish =
+        [CElem (Elem "gibberish" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["gibberish"]
+        ; return Gibberish
+        } `adjustErr` ("in <gibberish>, "++)
 
 instance HTypeable Unknown where
     toHType x = Defined "unknown" [] []
@@ -247,14 +258,14 @@ instance XmlAttrType Omission_type where
             translate "subject" = Just Omission_type_subject
             translate "dirobject" = Just Omission_type_dirobject
             translate "indobject" = Just Omission_type_indobject
-            translate "preosition" = Just Omission_type_preosition
+            translate "preposition" = Just Omission_type_preposition
             translate "other" = Just Omission_type_other
             translate _ = Nothing
     toAttrFrTyp n Omission_type_verb = Just (n, str2attr "verb")
     toAttrFrTyp n Omission_type_subject = Just (n, str2attr "subject")
     toAttrFrTyp n Omission_type_dirobject = Just (n, str2attr "dirobject")
     toAttrFrTyp n Omission_type_indobject = Just (n, str2attr "indobject")
-    toAttrFrTyp n Omission_type_preosition = Just (n, str2attr "preosition")
+    toAttrFrTyp n Omission_type_preposition = Just (n, str2attr "preposition")
     toAttrFrTyp n Omission_type_other = Just (n, str2attr "other")
 
 instance HTypeable Context where
@@ -270,21 +281,12 @@ instance XmlContent Context where
 instance HTypeable Comment where
     toHType x = Defined "comment" [] []
 instance XmlContent Comment where
-    toContents (Comment as a) =
-        [CElem (Elem "comment" (toAttrs as) (toText a)) ()]
+    toContents (Comment a) =
+        [CElem (Elem "comment" [] (toText a)) ()]
     parseContents = do
-        { e@(Elem _ as _) <- element ["comment"]
-        ; interior e $ return (Comment (fromAttrs as))
-                       `apply` (text `onFail` return "")
+        { e@(Elem _ [] _) <- element ["comment"]
+        ; interior e $ return (Comment) `apply` (text `onFail` return "")
         } `adjustErr` ("in <comment>, "++)
-instance XmlAttributes Comment_Attrs where
-    fromAttrs as =
-        Comment_Attrs
-          { commentAuthor = definiteA fromAttrToStr "comment" "author" as
-          }
-    toAttrs v = catMaybes 
-        [ toAttrFrStr "author" (commentAuthor v)
-        ]
 
 instance HTypeable Target where
     toHType x = Defined "target" [] []

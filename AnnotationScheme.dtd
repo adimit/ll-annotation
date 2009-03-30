@@ -5,27 +5,26 @@
 <!ATTLIST tokens charlength CDATA #REQUIRED >
 <!ELEMENT errtoks EMPTY>
 <!ELEMENT error (errtoks, type, context, target?, comment?)>
-<!ELEMENT type (Form|Grammar|Spelling)>
+<!ELEMENT type (form|grammar|spelling|gibberish)>
 
 <!ELEMENT form (lexical|unknown)>
 <!ELEMENT grammar (agreement|omission|unknown)>
 <!ELEMENT spelling EMPTY>
+<!ELEMENT gibberish EMPTY>
 
 <!ELEMENT unknown EMPTY>
 <!ELEMENT lexical EMPTY>
 <!ELEMENT agreement EMPTY>
 <!ELEMENT omission EMPTY>
 
-<!ATTLIST omission type (verb|subject|dirobject|indobject|preosition|other) #REQUIRED>
+<!ATTLIST omission type (verb|subject|dirobject|indobject|preposition|other) #REQUIRED>
 
-<!ELEMENT context (#PCDATA) >
+<!ELEMENT context (#PCDATA)>
 
-<!ELEMENT comment (#PCDATA) >
-<!ATTLIST comment author CDATA #REQUIRED >
+<!ELEMENT comment (#PCDATA)>
 
-<!ELEMENT target (#PCDATA) >
+<!ELEMENT target (#PCDATA)>
 <!ELEMENT token (#PCDATA)>
 
 <!ATTLIST token idx ID #REQUIRED>
 <!ATTLIST errtoks idx IDREFS #REQUIRED>
-
