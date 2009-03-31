@@ -1,0 +1,63 @@
+digraph Taxonomy {
+	subgraph cluster_0 {
+		color = black;
+		label = "Speling";
+		Spelling -> Homonymy;
+		Spelling -> Register;
+		Spelling -> Diacritics;
+		Spelling -> "Local Variation";
+	}
+
+	subgraph cluster_1 {
+		label = Grammar;
+		Grammar -> Agreement;
+		Grammar -> Omission;
+		Grammar -> Redundancy;
+		Grammar -> Morphology;
+		Grammar -> "Word Order";
+
+		Agreement -> Number;
+		Agreement -> Gender;
+		Agreement -> Case;
+		Agreement -> Person;
+		Agreement -> Tense;
+
+		Omission -> Subject;
+		Omission -> Predicate;
+		Omission -> Object;
+		Omission -> Article;
+		Omission -> Preposition;
+		Object -> Direct;
+		Object -> Indirect;
+
+		Morphology -> Derivation;
+		Morphology -> Compounding;
+		Morphology -> Inflection;
+
+		color = black;
+
+		node [style=filled, color=lightgrey]
+		"Error Context";
+	}
+
+	subgraph cluster_2 {
+		label = Context;
+		Context -> Lexis;
+		Context -> Idiom;
+		color = black;
+	}
+
+	subgraph cluster_3 {
+		label = Gibberish
+		Gibberish;
+		color = black;
+	}
+
+	Error -> Spelling;
+	Error -> Grammar;
+	Error -> Context;
+	Error -> Gibberish;
+
+	node [style=filled, color=lightgrey]
+	Transfer;
+}
