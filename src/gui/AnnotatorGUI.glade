@@ -93,7 +93,6 @@
                 <property name="position_set">True</property>
                 <child>
                   <widget class="GtkTable" id="table1">
-                    <property name="height_request">180</property>
                     <property name="visible">True</property>
                     <property name="n_rows">3</property>
                     <property name="n_columns">3</property>
@@ -218,11 +217,13 @@
                                   <widget class="GtkHBox" id="hbox2">
                                     <property name="visible">True</property>
                                     <child>
-                                      <widget class="GtkButton" id="triggerButton">
+                                      <widget class="GtkToggleButton" id="triggerButton">
                                         <property name="label" translatable="yes">Select Trigger</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
+                                        <property name="relief">none</property>
+                                        <property name="yalign">0.4699999988079071</property>
                                       </widget>
                                       <packing>
                                         <property name="expand">False</property>

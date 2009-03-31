@@ -62,34 +62,32 @@ xmlFileFilter = do ff <- fileFilterNew
                    fileFilterAddMimeType ff "text/xml"
                    return ff
 
-findContext :: Gui -> EventM EButton Bool
-findContext gui =
+findContext :: Gui -> Label -> IORef [Token] -> EventM EButton Bool
+findContext gui l ref =
     do btn <- eventButton
        case btn of
            LeftButton -> do 
                coords <- eventCoordinates
                let (x,y) = truncCoordToInt coords
-               liftIO $ do findToken gui (x,y)
+               liftIO $ do findToken gui (x,y) l ref 
                            return False
            _          -> return False
        
 truncCoordToInt :: (Double,Double) -> (Int,Int)
 truncCoordToInt (x,y) = (truncate x,truncate y)
 
-findToken :: Gui -> (Int,Int) -> IO ()
-findToken gui (x,y) = do
+findToken :: Gui -> (Int,Int) -> Label -> IORef [Token] -> IO ()
+findToken gui (x,y) l tokenRef = do
         bcrd <- (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
         iter <- uncurry (textViewGetIterAtLocation (corpusView gui)) bcrd
         loc <- textIterGetOffset iter
         Just tmap <- readIORef (tokens gui)
         let Just token = (Point loc) `M.lookup` tmap
-        ref <- readIORef (selectedTkn gui)
-        case ref of
-             Nothing -> writeIORef (selectedTkn gui) (Just [token])
-             Just toks -> if (not (elem token toks))
-                               then writeIORef (selectedTkn gui) (Just $ toks ++ [token])
-                               else writeIORef (selectedTkn gui) (Just $ delete token toks)
-        putTokensOnLabel gui
+        toks <- readIORef tokenRef
+        if (not (elem token toks))
+           then writeIORef tokenRef $ token:toks
+           else writeIORef tokenRef $ delete token toks
+        putTokensOnLabel gui l
                         
 -- | Entry to the GUI
 runGUI :: IO ()
@@ -118,8 +116,9 @@ prepareGUI = do
                              textView  <- xmlGetWidget gladeXml castToTextView "corpusView"
                              nothingRef <- newIORef Nothing
                              nothingRef' <- newIORef Nothing
-                             nothingRef'' <- newIORef Nothing
+                             nothingRef'' <- newIORef []
                              nothingRef''' <- newIORef Nothing
+                             nothingRef'''' <- newIORef []
                              let gui = Gui { corpusView  = textView
                                            , window      = w
                                            , xml         = gladeXml
@@ -128,6 +127,7 @@ prepareGUI = do
                                            , tokens      = nothingRef'
                                            , selectedTkn = nothingRef''
                                            , xmlDocument = nothingRef'''
+                                           , trigger     = nothingRef''''
                                            }
                              initControls gui
                              onDestroy w mainQuit
@@ -140,10 +140,13 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       openItem <- xmlGetWidget (xml gui) castToMenuItem menuItemOpen
                       clearBtn <- xmlGetWidget (xml gui) castToButton "clearButton"
                       spellBtn <- xmlGetWidget (xml gui) castToButton "errorSpelButton"
+                      triggBtn <- xmlGetWidget (xml gui) castToToggleButton "triggerButton"
                       quitItem `afterActivateLeaf` widgetDestroy (window gui)
                       openItem `afterActivateLeaf` openItemHandler gui
                       clearBtn `onClicked` clearBtnHandler gui
                       spellBtn `onClicked` spellBtnHandler gui
+                      ref <- newIORef Nothing
+                      triggBtn `afterToggled` triggerBtnHandler gui ref
                       grmview  <- xmlGetWidget (xml gui) castToTreeView "grammarView"
                       frmview  <- xmlGetWidget (xml gui) castToTreeView "formView"
                       (initTreeView grmview) =<< grammarStore
@@ -187,37 +190,52 @@ saveAsItemHandler = undefined
 spellBtnHandler :: Gui -> IO ()
 spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
                          case tks of
-                              Nothing -> showError "Please select some tokens first!"
-                              Just [] -> showError "Please select some tokens first!"
-                              Just ts -> do addToErrors gui e
-                                            clearBtnHandler gui
-                                            where e = (Error (Errtoks $ unwords ids)
-                                                             (TypeSpelling Spelling)
-                                                             Nothing
-                                                             Nothing)
-                                                  ids = tokenIds ts
+                              [] -> showError "Please select some tokens first!"
+                              ts -> do addToErrors gui e
+                                       clearBtnHandler gui
+                                       where e = (Error (Errtoks $ unwords ids)
+                                                        (TypeSpelling Spelling)
+                                                        Nothing
+                                                        Nothing)
+                                             ids = tokenIds ts
                            
 frecBtnHandler :: Gui -> TreeView -> IO ()
 frecBtnHandler gui view = do row <- (treeViewGetSelection view >>= treeSelectionGetSelectedRows)
                              tks <- readIORef (selectedTkn gui)
                              case tks of
-                                  Nothing -> showError "Please select some tokens first"
-                                  Just [] -> showError "Please select some tokens first"
-                                  Just ts -> case row of
-                                                  [path] -> do (EType _ content) <- (\s -> s `treeStoreGetValue` path) =<< formStore
-                                                               case content of
-                                                                    Nothing -> showError "Select a leaf."
-                                                                    Just etype -> do addToErrors gui e
-                                                                                     clearBtnHandler gui
-                                                                                     where e = (Error (Errtoks $ unwords . tokenIds $ ts)
-                                                                                                      (TypeForm etype)
-                                                                                                       Nothing
-                                                                                                       Nothing)
-                                                  _ -> showError "Please select one item." 
+                                  [] -> showError "Please select some tokens first"
+                                  ts -> case row of
+                                             [path] -> do (EType _ content) <- (\s -> s `treeStoreGetValue` path) =<< formStore
+                                                          case content of
+                                                               Nothing -> showError "Select a leaf."
+                                                               Just etype -> do addToErrors gui e
+                                                                                clearBtnHandler gui
+                                                                                where e = (Error (Errtoks $ unwords . tokenIds $ ts)
+                                                                                                 (TypeForm etype)
+                                                                                                  Nothing
+                                                                                                  Nothing)
+                                             _ -> showError "Please select one item." 
+
+triggerBtnHandler :: Gui -> IORef (Maybe (ConnectId TextView)) -> IO ()
+triggerBtnHandler gui ref = do l <- xmlGetWidget (xml gui) castToLabel "triggerLabel"
+                               tbtn <- xmlGetWidget (xml gui) castToToggleButton "triggerButton"
+                               mccid <- readIORef (corpusClick gui)
+                               tstate <- toggleButtonGetActive tbtn
+                               case mccid of
+                                    Nothing -> return ()
+                                    Just ccid -> if tstate
+                                                    then do signalBlock ccid
+                                                            cid <- corpusView gui `on` buttonReleaseEvent $ findContext gui l (trigger gui)
+                                                            writeIORef ref (Just cid)
+                                                    else do signalUnblock ccid
+                                                            mcid <- readIORef ref
+                                                            case mcid of
+                                                                 Nothing -> showError "No trigger record signal. This shouldn't have happened."
+                                                                 Just cid -> signalDisconnect cid
 
 clearBtnHandler :: Gui -> IO ()
-clearBtnHandler gui =  do writeIORef (selectedTkn gui) (Just [])
-                          putTokensOnLabel gui
+clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
+                          putTokensOnLabel gui (tokenLabel gui)
 
 tokenIds :: [Token] -> [String]
 tokenIds = map tokenId
@@ -249,7 +267,7 @@ loadFile gui fn = do
                widgetSetSensitive si True
                let (_,text,toks) = xmlToTokenString c
                tb `textBufferSetText` text
-               connectId <- corpusView gui `on` buttonReleaseEvent $ findContext gui
+               connectId <- corpusView gui `on` buttonReleaseEvent $ findContext gui (tokenLabel gui) (selectedTkn gui)
                updateRef' (corpusClick gui) (maybeDisconnectOld connectId)
                updateRef (tokens gui) toks
                     where maybeDisconnectOld :: ConnectId TextView ->
@@ -261,13 +279,11 @@ loadFile gui fn = do
                                    Nothing     -> return ()
                                  return cid
     
-putTokensOnLabel :: Gui -> IO ()
-putTokensOnLabel gui = do ref <- readIORef (selectedTkn gui)
-                          case ref of
-                               (Just tkns) -> (tokenLabel gui) `labelSetText` (show $ map r (sort tkns))
-                               Nothing     -> (tokenLabel gui) `labelSetText` ""
-                               where  r :: Token -> String
-                                      r (Token _ s) = s
+putTokensOnLabel :: Gui -> Label -> IO ()
+putTokensOnLabel gui l = do tkns <- readIORef (selectedTkn gui)
+                            l `labelSetText` (show $ map r (sort tkns))
+                                 where  r :: Token -> String
+                                        r (Token _ s) = s
 
 updateRef  :: IORef (Maybe a) -> a -> IO ()
 updateRef ref payload = updateRef' ref (const $ return payload)

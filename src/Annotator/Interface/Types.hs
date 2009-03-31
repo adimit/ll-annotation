@@ -17,7 +17,8 @@ data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
                , tokenLabel  :: Label -- ^ The Label displaying tokens
                , corpusClick :: IORef (Maybe (ConnectId TextView))
                , tokens      :: IORef (Maybe TokenMap)
-               , selectedTkn :: IORef (Maybe [Token])
+               , selectedTkn :: IORef [Token]
+               , trigger     :: IORef [Token]
                , xmlDocument :: IORef (Maybe Corpus)
                }
 
