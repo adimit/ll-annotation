@@ -6,13 +6,13 @@
 -- Maintainer : Aleksandar Dimitrov <aleks.dimitrov@gmail.com>
 -- Stability : provisional
 -- Portability : unportable
--- 
+--
 -- This module defines the graphical user interface for the Annotator.
 
 module Annotator.Interface
-       ( -- * GUI entry points  
+       ( -- * GUI entry points
        runGUI
-       , runGUIWithFile 
+       , runGUIWithFile
        ) where
 
 import Annotator.DTD
@@ -31,13 +31,13 @@ import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
 import Text.XML.HaXml.XmlContent (XmlContent, fWriteXml)
 
--- Takes a corpus and returns a string representing the corpus' text in plain text.
-xmlToTokenString :: Corpus -> (Int,String,TokenMap)
-xmlToTokenString (Corpus (Tokens (Tokens_Attrs slen) xs) _) = foldr f ((read slen),"",M.empty) xs
-        where f !token@(Token _ t) !(!i,!s,!m) = 
-               let l = length t
-                   i' = l `seq` (i-l)
-               in  (i',t++s,M.insert (Span (i') l) token m)
+import Data.Array
+
+xmlToArray :: Corpus -> Array Int Token
+xmlToArray (Corpus (Tokens (Tokens_Attrs amount) ts) _) =
+        array (0,amount') [(i,t) | (i,t) <-map f ts]
+        where amount' = (read amount) - 1
+              f t@(Token (Token_Attrs idx) _) = (read . (drop 1) $ idx,t)
 
 -- Generic function to notify the user something bad has happened.
 showError :: String -> IO ()
@@ -62,36 +62,12 @@ xmlFileFilter = do ff <- fileFilterNew
                    fileFilterAddMimeType ff "text/xml"
                    return ff
 
-findContext :: Gui -> Label -> IORef [Token] -> EventM EButton Bool
-findContext gui l ref =
-    do btn <- eventButton
-       case btn of
-           LeftButton -> do 
-               coords <- eventCoordinates
-               let (x,y) = truncCoordToInt coords
-               liftIO $ do findToken gui (x,y) l ref 
-                           return False
-           _          -> return False
-       
 truncCoordToInt :: (Double,Double) -> (Int,Int)
 truncCoordToInt (x,y) = (truncate x,truncate y)
 
-findToken :: Gui -> (Int,Int) -> Label -> IORef [Token] -> IO ()
-findToken gui (x,y) l tokenRef = do
-        bcrd <- (corpusView gui) `textViewWindowToBufferCoords` TextWindowWidget $ (x,y)
-        iter <- uncurry (textViewGetIterAtLocation (corpusView gui)) bcrd
-        loc <- textIterGetOffset iter
-        Just tmap <- readIORef (tokens gui)
-        let Just token = (Point loc) `M.lookup` tmap
-        toks <- readIORef tokenRef
-        if (not (elem token toks))
-           then writeIORef tokenRef $ token:toks
-           else writeIORef tokenRef $ delete token toks
-        putTokensOnLabel gui l
-                        
 -- | Entry to the GUI
 runGUI :: IO ()
-runGUI = do gui <- prepareGUI 
+runGUI = do gui <- prepareGUI
             case gui of
                  Left s -> showError s
                  Right _ -> mainGUI
@@ -99,7 +75,7 @@ runGUI = do gui <- prepareGUI
 -- | Entry in to the GUI, whilst opening a corpus file.
 runGUIWithFile :: FilePath -> IO ()
 runGUIWithFile fn = do gui <-  prepareGUI
-                       case gui of 
+                       case gui of
                             Left s -> showError s
                             Right g -> loadFile g fn >> mainGUI
 
@@ -123,8 +99,7 @@ prepareGUI = do
                                            , window      = w
                                            , xml         = gladeXml
                                            , tokenLabel  = tl
-                                           , corpusClick = nothingRef
-                                           , tokens      = nothingRef'
+                                           , tokenArray  = nothingRef'
                                            , selectedTkn = nothingRef''
                                            , xmlDocument = nothingRef'''
                                            , trigger     = nothingRef''''
@@ -146,7 +121,6 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       clearBtn `onClicked` clearBtnHandler gui
                       spellBtn `onClicked` spellBtnHandler gui
                       ref <- newIORef Nothing
-                      triggBtn `afterToggled` triggerBtnHandler gui ref
                       grmview  <- xmlGetWidget (xml gui) castToTreeView "grammarView"
                       frmview  <- xmlGetWidget (xml gui) castToTreeView "formView"
                       (initTreeView grmview) =<< grammarStore
@@ -193,12 +167,13 @@ spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
                               [] -> showError "Please select some tokens first!"
                               ts -> do addToErrors gui e
                                        clearBtnHandler gui
-                                       where e = (Error (Errtoks $ unwords ids)
+                                       where e = (Error (Errtoks $ unwords . (map tokenId) $ ts)
                                                         (TypeSpelling Spelling)
                                                         Nothing
                                                         Nothing)
-                                             ids = tokenIds ts
-                           
+tokenId :: Token -> String
+tokenId (Token (Token_Attrs idx) _) = idx
+
 frecBtnHandler :: Gui -> TreeView -> IO ()
 frecBtnHandler gui view = do row <- (treeViewGetSelection view >>= treeSelectionGetSelectedRows)
                              tks <- readIORef (selectedTkn gui)
@@ -210,37 +185,15 @@ frecBtnHandler gui view = do row <- (treeViewGetSelection view >>= treeSelection
                                                                Nothing -> showError "Select a leaf."
                                                                Just etype -> do addToErrors gui e
                                                                                 clearBtnHandler gui
-                                                                                where e = (Error (Errtoks $ unwords . tokenIds $ ts)
+                                                                                where e = (Error (Errtoks $ unwords . (map tokenId) $ ts)
                                                                                                  (TypeForm etype)
                                                                                                   Nothing
                                                                                                   Nothing)
-                                             _ -> showError "Please select one item." 
-
-triggerBtnHandler :: Gui -> IORef (Maybe (ConnectId TextView)) -> IO ()
-triggerBtnHandler gui ref = do l <- xmlGetWidget (xml gui) castToLabel "triggerLabel"
-                               tbtn <- xmlGetWidget (xml gui) castToToggleButton "triggerButton"
-                               mccid <- readIORef (corpusClick gui)
-                               tstate <- toggleButtonGetActive tbtn
-                               case mccid of
-                                    Nothing -> return ()
-                                    Just ccid -> if tstate
-                                                    then do signalBlock ccid
-                                                            cid <- corpusView gui `on` buttonReleaseEvent $ findContext gui l (trigger gui)
-                                                            writeIORef ref (Just cid)
-                                                    else do signalUnblock ccid
-                                                            mcid <- readIORef ref
-                                                            case mcid of
-                                                                 Nothing -> showError "No trigger record signal. This shouldn't have happened."
-                                                                 Just cid -> signalDisconnect cid
+                                             _ -> showError "Please select one item."
 
 clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
                           putTokensOnLabel gui (tokenLabel gui)
-
-tokenIds :: [Token] -> [String]
-tokenIds = map tokenId
-           where tokenId :: Token -> (String)
-                 tokenId (Token (Token_Attrs idx) _) = idx
 
 -- Queries the user for opening a file.
 openFileAction :: Gui -> IO (Maybe FilePath)
@@ -255,7 +208,6 @@ openFileAction gui = do
 -- Load a corpus from a file, display it, and set the appropriate events.
 loadFile :: Gui -> FilePath -> IO ()
 loadFile gui fn = do
-    tb <- textViewGetBuffer (corpusView gui)
     cntt <- readFile fn
     let corpus = readXml cntt
     case corpus of
@@ -265,30 +217,30 @@ loadFile gui fn = do
                si <- xmlGetWidget (xml gui) castToMenuItem "menuItemSave"
                si `afterActivateLeaf` (saveItemHandler gui fn)
                widgetSetSensitive si True
-               let (_,text,toks) = xmlToTokenString c
-               tb `textBufferSetText` text
-               connectId <- corpusView gui `on` buttonReleaseEvent $ findContext gui (tokenLabel gui) (selectedTkn gui)
-               updateRef' (corpusClick gui) (maybeDisconnectOld connectId)
-               updateRef (tokens gui) toks
-                    where maybeDisconnectOld :: ConnectId TextView ->
-                                                Maybe (ConnectId TextView) ->
-                                                IO (ConnectId TextView)
-                          maybeDisconnectOld cid payload =
-                              do case payload of
-                                   Just cidOld -> signalDisconnect cidOld
-                                   Nothing     -> return ()
-                                 return cid
-    
+
+               tb <- textViewGetBuffer (corpusView gui)
+               tagtable <- textBufferGetTagTable tb
+               readCorpus c tb gui
+
+readCorpus corpus@(Corpus (Tokens _ ts) (Errors es)) tb gui =
+        do updateRef (tokenArray gui) tokens
+           tb `textBufferSetText` (concat . (map tokenString) $ (elems tokens))
+           where tokens = xmlToArray corpus
+
+tagHandler = undefined
+
 putTokensOnLabel :: Gui -> Label -> IO ()
 putTokensOnLabel gui l = do tkns <- readIORef (selectedTkn gui)
-                            l `labelSetText` (show $ map r (sort tkns))
-                                 where  r :: Token -> String
-                                        r (Token _ s) = s
+                            l `labelSetText` (show $ map tokenString (sort tkns))
+
+-- Helper for maps. Factored out due to common use.
+tokenString :: Token -> String
+tokenString (Token _ s) = s
 
 updateRef  :: IORef (Maybe a) -> a -> IO ()
 updateRef ref payload = updateRef' ref (const $ return payload)
 
-updateRef' :: IORef (Maybe a) -> (Maybe a ->IO a) -> IO () 
+updateRef' :: IORef (Maybe a) -> (Maybe a -> IO a) -> IO ()
 updateRef' ref act = do var <- readIORef ref
                         a'  <- act var
                         writeIORef ref (Just a')

@@ -2,7 +2,7 @@
 <!ELEMENT corpus (tokens, errors)>
 <!ELEMENT errors (error*)>
 <!ELEMENT tokens (token*)>
-<!ATTLIST tokens charlength CDATA #REQUIRED >
+<!ATTLIST tokens amount CDATA #REQUIRED >
 <!ELEMENT errtoks EMPTY>
 <!ELEMENT error (errtoks, type, target?, comment?)>
 <!ELEMENT type (form|grammar|spelling|gibberish)>
