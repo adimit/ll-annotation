@@ -12,7 +12,7 @@ newtype Errors = Errors [Error] 		deriving (Eq,Show)
 data Tokens = Tokens Tokens_Attrs [Token]
             deriving (Eq,Show)
 data Tokens_Attrs = Tokens_Attrs
-    { tokensCharlength :: String
+    { tokensAmount :: String
     } deriving (Eq,Show)
 data Errtoks = Errtoks
     { errtoksIdx :: String
@@ -88,10 +88,10 @@ instance XmlContent Tokens where
 instance XmlAttributes Tokens_Attrs where
     fromAttrs as =
         Tokens_Attrs
-          { tokensCharlength = definiteA fromAttrToStr "tokens" "charlength" as
+          { tokensAmount = definiteA fromAttrToStr "tokens" "amount" as
           }
     toAttrs v = catMaybes 
-        [ toAttrFrStr "charlength" (tokensCharlength v)
+        [ toAttrFrStr "amount" (tokensAmount v)
         ]
 
 instance HTypeable Errtoks where
