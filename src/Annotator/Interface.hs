@@ -20,12 +20,14 @@ import Annotator.Interface.Constants
 import Annotator.Interface.Models
 import Annotator.Interface.Types
 import Control.Monad.Trans (liftIO)
+import Control.Monad (forM,zipWithM_)
 import Data.IORef
 import Data.List
 import qualified Data.Map as M
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
+import qualified Graphics.UI.Gtk.Gdk.Events as Old
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
@@ -224,10 +226,37 @@ loadFile gui fn = do
 
 readCorpus corpus@(Corpus (Tokens _ ts) (Errors es)) tb gui =
         do updateRef (tokenArray gui) tokens
-           tb `textBufferSetText` (concat . (map tokenString) $ (elems tokens))
+           tb `textBufferSetText` (concat . (map tokenString) $ tokenList)
+           tt <- textBufferGetTagTable tb
+           tags <- forM tokenList (token2Tag gui tt)
+           applyTags tb tags tokenList
+           return ()
            where tokens = xmlToArray corpus
+                 tokenList = elems tokens
 
-tagHandler = undefined
+token2Tag :: Gui -> TextTagTable -> Token -> IO TextTag
+token2Tag gui tt (Token (Token_Attrs idx) _) = do tag <- textTagNew $ Just idx
+                                                  tag `onTextTagEvent` (tagEventHandler gui idx)
+                                                  tt `textTagTableAdd` tag
+                                                  return tag
+
+applyTags :: TextBuffer -> [TextTag] -> [Token] -> IO ()
+applyTags tb tags tokens = do tt <- textBufferGetTagTable tb
+                              iter <- textBufferGetStartIter tb
+                              applyTag tags tokens iter
+                              where applyTag :: [TextTag] -> [Token] -> TextIter -> IO ()
+                                    applyTag (g:gs) ((Token _ t):ts) iter = do 
+                                             iter' <- textIterCopy iter
+                                             textIterForwardChars iter' (length t)
+                                             textBufferApplyTag tb g iter iter'
+                                             applyTag gs ts iter'
+                                    applyTag [] [] _ = return ()
+                                    applyTag _ _ _ = error "Aleks fucked up." -- this shouldn't happen
+
+type TokenIndex = String
+
+tagEventHandler :: Gui -> TokenIndex -> Old.Event -> TextIter -> IO ()
+tagEventHandler gui i e _ = undefined
 
 putTokensOnLabel :: Gui -> Label -> IO ()
 putTokensOnLabel gui l = do tkns <- readIORef (selectedTkn gui)
