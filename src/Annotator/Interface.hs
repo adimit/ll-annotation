@@ -21,19 +21,14 @@ import Annotator.Interface.Models
 import Annotator.Interface.Handlers
 import Annotator.Interface.Util
 import Annotator.Interface.Types
-import Control.Monad.Trans (liftIO)
-import Control.Monad (forM,zipWithM_)
+import Control.Monad (forM)
 import Data.IORef
-import Data.List
-import qualified Data.Map as M
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.EventM
-import qualified Graphics.UI.Gtk.Gdk.Events as Old
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
-import Text.XML.HaXml.XmlContent (XmlContent, fWriteXml)
+import Text.XML.HaXml.XmlContent (fWriteXml)
 
 import Data.Array
 
@@ -162,13 +157,11 @@ loadFile gui fn = do
                si <- xmlGetWidget (xml gui) castToMenuItem "menuItemSave"
                si `afterActivateLeaf` (saveItemHandler gui fn)
                widgetSetSensitive si True
-
                tb <- textViewGetBuffer (corpusView gui)
-               tagtable <- textBufferGetTagTable tb
                readCorpus c tb gui
 
 readCorpus :: Corpus -> TextBuffer -> Gui -> IO ()
-readCorpus corpus@(Corpus (Tokens _ ts) (Errors es)) tb gui =
+readCorpus corpus@(Corpus (Tokens _ _) (Errors _)) tb gui =
         do putStrLn "Indexing tokens..."
            updateRef (tokenArray gui) tokens
            putStrLn "Filling Buffer..."
@@ -184,8 +177,7 @@ readCorpus corpus@(Corpus (Tokens _ ts) (Errors es)) tb gui =
 
 
 applyTags :: TextBuffer -> [TextTag] -> [Token] -> IO ()
-applyTags tb tags tokens = do tt <- textBufferGetTagTable tb
-                              iter <- textBufferGetStartIter tb
+applyTags tb tags tokens = do iter <- textBufferGetStartIter tb
                               applyTag tags tokens iter
                               where applyTag :: [TextTag] -> [Token] -> TextIter -> IO ()
                                     applyTag (g:gs) ((Token _ t):ts) iter = do 
