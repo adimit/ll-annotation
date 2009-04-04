@@ -18,6 +18,8 @@ module Annotator.Interface
 import Annotator.DTD
 import Annotator.Interface.Constants
 import Annotator.Interface.Models
+import Annotator.Interface.Handlers
+import Annotator.Interface.Util
 import Annotator.Interface.Types
 import Control.Monad.Trans (liftIO)
 import Control.Monad (forM,zipWithM_)
@@ -35,15 +37,11 @@ import Text.XML.HaXml.XmlContent (XmlContent, fWriteXml)
 
 import Data.Array
 
-xmlToArray :: Corpus -> Array Int Token
-xmlToArray (Corpus (Tokens (Tokens_Attrs amount) ts) _) =
-        array (0,amount') [(i,t) | (i,t) <-map f ts]
-        where amount' = (read amount) - 1
-              f t@(Token (Token_Attrs idx) _) = (read . (drop 1) $ idx,t)
-
--- Generic function to notify the user something bad has happened.
-showError :: String -> IO ()
-showError = putStrLn
+token2Tag :: Gui -> TextTagTable -> Token -> IO TextTag
+token2Tag gui tt token@(Token (Token_Attrs idx) _) = do tag <- textTagNew $ Just idx
+                                                        tag `onTextTagEvent` (tagEventHandler gui token)
+                                                        tt `textTagTableAdd` tag
+                                                        return tag
 
 -- Builds a GTK file Chooser to open files.
 constructOpenFileChooser :: Gui -> IO FileChooserDialog
@@ -132,13 +130,15 @@ initTreeView view model =  do
                         view `treeViewAppendColumn` column
                         return ()
 
-recordHandler gui view = do row <- (treeViewGetSelection view >>= treeSelectionGetSelectedRows)
-                            tokens <- readIORef (selectedTkn gui)
-                            case tokens of
-                                [] -> putStrLn "Please select some tokens."
-                                ts -> case row of
-                                          [path] -> undefined
-
+-- Queries the user for opening a file.
+openFileAction :: Gui -> IO (Maybe FilePath)
+openFileAction gui = do
+    fc <- constructOpenFileChooser gui
+    r  <- dialogRun fc
+    widgetHide fc
+    case r of
+         ResponseAccept -> fileChooserGetFilename fc
+         _              -> return Nothing
 
 openItemHandler :: Gui -> IO ()
 openItemHandler gui = do fn <- openFileAction gui
@@ -154,23 +154,6 @@ saveItemHandler gui fn = do ref <- readIORef (xmlDocument gui)
 
 saveAsItemHandler :: Gui -> IO ()
 saveAsItemHandler = undefined
-
-tokenId :: Token -> String
-tokenId (Token (Token_Attrs idx) _) = idx
-
-clearBtnHandler :: Gui -> IO ()
-clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
-                          putTokensOnLabel gui (tokenLabel gui)
-
--- Queries the user for opening a file.
-openFileAction :: Gui -> IO (Maybe FilePath)
-openFileAction gui = do
-    fc <- constructOpenFileChooser gui
-    r  <- dialogRun fc
-    widgetHide fc
-    case r of
-         ResponseAccept -> fileChooserGetFilename fc
-         _              -> return Nothing
 
 -- Load a corpus from a file, display it, and set the appropriate events.
 loadFile :: Gui -> FilePath -> IO ()
@@ -204,11 +187,6 @@ readCorpus corpus@(Corpus (Tokens _ ts) (Errors es)) tb gui =
            where tokens = xmlToArray corpus
                  tokenList = elems tokens
 
-token2Tag :: Gui -> TextTagTable -> Token -> IO TextTag
-token2Tag gui tt token@(Token (Token_Attrs idx) _) = do tag <- textTagNew $ Just idx
-                                                        tag `onTextTagEvent` (tagEventHandler gui token)
-                                                        tt `textTagTableAdd` tag
-                                                        return tag
 
 applyTags :: TextBuffer -> [TextTag] -> [Token] -> IO ()
 applyTags tb tags tokens = do tt <- textBufferGetTagTable tb
@@ -223,45 +201,3 @@ applyTags tb tags tokens = do tt <- textBufferGetTagTable tb
                                     applyTag [] [] _ = return ()
                                     applyTag _ _ _ = error "Aleks fucked up." -- this shouldn't happen
 
-tagEventHandler :: Gui -> Token -> Old.Event -> TextIter -> IO ()
-tagEventHandler gui t (Old.Button _ Old.SingleClick _ _ _ _ Old.LeftButton  _ _) _ = do
-    seltokens <- readIORef (selectedTkn gui)
-    if t `elem` seltokens
-       then writeIORef (selectedTkn gui) (t `delete` seltokens)
-       else writeIORef (selectedTkn gui) (t:seltokens)
-    putTokensOnLabel gui (tokenLabel gui)
-tagEventHandler _ _ _ _ = return ()
-
-putTokensOnLabel :: Gui -> Label -> IO ()
-putTokensOnLabel gui l = do tkns <- readIORef (selectedTkn gui)
-                            l `labelSetText` (show $ map tokenString (sort tkns))
-
--- Helper for maps. Factored out due to common use.
-tokenString :: Token -> String
-tokenString (Token _ s) = s
-
-updateRef  :: IORef (Maybe a) -> a -> IO ()
-updateRef ref payload = updateRef' ref (const $ return payload)
-
-updateRef' :: IORef (Maybe a) -> (Maybe a -> IO a) -> IO ()
-updateRef' ref act = do var <- readIORef ref
-                        a'  <- act var
-                        writeIORef ref (Just a')
-
-addToErrors :: Gui -> Record -> IO ()
-addToErrors gui err = do ref <- readIORef (xmlDocument gui)
-                         case ref of
-                              Just doc -> writeIORef (xmlDocument gui) (Just $ (ate err) doc)
-                              Nothing  -> return ()
-                              where  ate e crp@(Corpus ts (Errors es)) =
-                                            if e `elem` es
-                                               then crp
-                                               else Corpus ts (Errors (e:es))
-
-removeFromErrors :: Gui -> Record -> IO ()
-removeFromErrors gui err = do ref <- readIORef (xmlDocument gui)
-                              case ref of
-                                   Just doc -> writeIORef (xmlDocument gui) (Just $ (rfe err) doc)
-                                   Nothing  -> return ()
-                                   where  rfe e (Corpus ts (Errors es)) =
-                                                 Corpus ts (Errors (delete e es))
