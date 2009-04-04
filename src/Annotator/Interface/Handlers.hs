@@ -2,26 +2,45 @@ module Annotator.Interface.Handlers where
 
 import Annotator.Interface.Types
 import Annotator.Interface.Util
+import Annotator.Interface.Models
 import Annotator.DTD
-import Control.Monad.Trans (liftIO)
-import Control.Monad (forM,zipWithM_)
 import Data.IORef
 import Data.List
-import qualified Data.Map as M
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.EventM
 import qualified Graphics.UI.Gtk.Gdk.Events as Old
-import Graphics.UI.Gtk.Glade
-import Graphics.UI.Gtk.Windows.Dialog
-import Text.XML.HaXml.XmlContent.Haskell (readXml)
+import Text.XML.HaXml.XmlContent
 
-recordHandler gui view = do row <- (treeViewGetSelection view >>= treeSelectionGetSelectedRows)
-                            tokens <- readIORef (selectedTkn gui)
-                            case tokens of
-                                [] -> putStrLn "Please select some tokens."
-                                ts -> case row of
-                                          [path] -> undefined
+recordHandler :: Gui -> TreeView -> IO ()
+recordHandler gui view = 
+    do tokens <- readIORef (selectedTkn gui)
+       case tokens of
+         [] -> putStrLn "Please select some tokens."
+         ts -> do Just iter <- (treeViewGetSelection view >>= treeSelectionGetSelected) 
+                  etypelist <- (\store -> recurseToParent (Just iter) store) =<< errorStore
+                  return ()
+       
+       
+recurseToParent :: (Maybe TreeIter) -> TreeStore EType -> IO [EType]
+recurseToParent Nothing _ = return []
+recurseToParent (Just iter) store = 
+    do parent <- treeModelIterParent store iter 
+       etype <- (treeStoreGetValue store) =<< (store `treeModelGetPath` iter) 
+       recurseToParent parent store >>= \t -> return (etype:t)
+       
+foldElist :: [EType] -> Error
+foldElist ((ENode _ t nothing):es) = foldElist' (t nothing) es
+foldElist ((ELeaf _ t):es) = foldElist' t es
+foldElist _ = error "WTF?"
+
+foldElist' :: XmlContent a => a -> [EType] -> Error
+foldElist' = undefined
+
+addToRecords :: Gui -> Record -> IO ()
+addToRecords = undefined
+
+makeRecord :: Error -> IO Record
+makeRecord = undefined
 
 clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
