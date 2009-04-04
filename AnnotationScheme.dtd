@@ -1,28 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!ELEMENT corpus (tokens, errors)>
-<!ELEMENT errors (error*)>
+<!ELEMENT errors (record*)>
 <!ELEMENT tokens (token*)>
 <!ATTLIST tokens amount CDATA #REQUIRED >
+<!ELEMENT record (errtoks, error, target?, comment?) >
 <!ELEMENT errtoks EMPTY>
-<!ELEMENT error (errtoks, type, target?, comment?)>
-<!ELEMENT type (form|grammar|spelling|gibberish)>
+<!ELEMENT error (context|grammar|spelling|gibberish)?>
 
-<!ELEMENT form (lexical|unknown)>
-<!ELEMENT grammar (agreement|omission|unknown)>
-<!ELEMENT spelling EMPTY>
+<!ELEMENT context (lexical|idiom)?>
+<!ELEMENT grammar (agreement|omission|wo|morphology|redundancy)?>
+<!ELEMENT spelling (homonymy|register|diacritics|local)?>
 <!ELEMENT gibberish EMPTY>
 
-<!ELEMENT unknown EMPTY>
 <!ELEMENT lexical EMPTY>
-<!ELEMENT agreement EMPTY>
-<!ELEMENT omission EMPTY>
+<!ELEMENT agreement (number|gender|case|person|tense)?>
+<!ELEMENT omission (subject|predicate|object|article|preposition)?>
+<!ELEMENT object (direct|indirect)? >
+<!ELEMENT morphology (derivation|compounding|inflection)? >
 
-<!ATTLIST omission type (verb|subject|dirobject|indobject|preposition|other) #REQUIRED>
+<!ELEMENT number EMPTY >
+<!ELEMENT gender EMPTY >
+<!ELEMENT case EMPTY >
+<!ELEMENT tense EMPTY >
+<!ELEMENT person EMPTY >
+<!ELEMENT subject EMPTY >
+<!ELEMENT predicate EMPTY >
+<!ELEMENT article EMPTY >
+<!ELEMENT preposition EMPTY >
+<!ELEMENT wo EMPTY >
+<!ELEMENT redundancy EMPTY >
+<!ELEMENT homonymy EMPTY >
+<!ELEMENT register EMPTY >
+<!ELEMENT diacritics EMPTY >
+<!ELEMENT local EMPTY >
+<!ELEMENT lexis EMPTY >
+<!ELEMENT idiom EMPTY >
+<!ELEMENT direct EMPTY >
+<!ELEMENT indirect EMPTY >
+<!ELEMENT derivation EMPTY >
+<!ELEMENT compounding EMPTY >
+<!ELEMENT inflection EMPTY >
 
 <!ELEMENT comment (#PCDATA)>
 
 <!ELEMENT target (#PCDATA)>
 <!ELEMENT token (#PCDATA)>
+
+<!ATTLIST grammar econtext IDREFS #IMPLIED>
+<!ATTLIST error transfer (true) #IMPLIED>
 
 <!ATTLIST token idx ID #REQUIRED>
 <!ATTLIST errtoks idx IDREFS #REQUIRED>

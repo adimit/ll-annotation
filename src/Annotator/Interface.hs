@@ -64,9 +64,6 @@ xmlFileFilter = do ff <- fileFilterNew
                    fileFilterAddMimeType ff "text/xml"
                    return ff
 
-truncCoordToInt :: (Double,Double) -> (Int,Int)
-truncCoordToInt (x,y) = (truncate x,truncate y)
-
 -- | Entry to the GUI
 runGUI :: IO ()
 runGUI = do gui <- prepareGUI
@@ -92,7 +89,6 @@ prepareGUI = do
                              w       <- xmlGetWidget gladeXml castToWindow windowMain
                              tl       <- xmlGetWidget gladeXml castToLabel "tokenLabel"
                              textView  <- xmlGetWidget gladeXml castToTextView "corpusView"
-                             nothingRef <- newIORef Nothing
                              nothingRef' <- newIORef Nothing
                              nothingRef'' <- newIORef []
                              nothingRef''' <- newIORef Nothing
@@ -116,26 +112,14 @@ initControls :: Gui -> IO ()
 initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget (xml gui) castToMenuItem menuItemOpen
                       clearBtn <- xmlGetWidget (xml gui) castToButton "clearButton"
-                      spellBtn <- xmlGetWidget (xml gui) castToButton "errorSpelButton"
-                      triggBtn <- xmlGetWidget (xml gui) castToToggleButton "triggerButton"
                       quitItem `afterActivateLeaf` widgetDestroy (window gui)
                       openItem `afterActivateLeaf` openItemHandler gui
                       clearBtn `onClicked` clearBtnHandler gui
-                      spellBtn `onClicked` spellBtnHandler gui
-                      ref <- newIORef Nothing
-                      grmview  <- xmlGetWidget (xml gui) castToTreeView "grammarView"
-                      frmview  <- xmlGetWidget (xml gui) castToTreeView "formView"
-                      (initTreeView grmview) =<< grammarStore
-                      (initTreeView frmview) =<< formStore
-                      frecBtn <- xmlGetWidget (xml gui) castToButton "formRecordButton"
-                      grecBtn <- xmlGetWidget (xml gui) castToButton "grammarRecordButton"
-                      frecBtn `onClicked` frecBtnHandler gui frmview
-                      grecBtn `onClicked` grecBtnHandler gui grmview
-
+                      errorView <- xmlGetWidget (xml gui) castToTreeView "errorView"
+                      (initTreeView errorView) =<< errorStore
+                      recordBtn <- xmlGetWidget (xml gui) castToButton "recordButton"
+                      recordBtn `onClicked` recordHandler gui
                       return ()
-
-grecBtnHandler :: Gui -> TreeView -> IO ()
-grecBtnHandler gui view = undefined
 
 initTreeView :: (XmlContent a) => TreeView -> TreeStore (EType a) -> IO ()
 initTreeView view model =  do
@@ -147,6 +131,8 @@ initTreeView view model =  do
                         cellLayoutSetAttributes column renderer model $ \row -> [cellText := name row]
                         view `treeViewAppendColumn` column
                         return ()
+
+recordHandler gui = undefined
 
 openItemHandler :: Gui -> IO ()
 openItemHandler gui = do fn <- openFileAction gui
@@ -163,35 +149,8 @@ saveItemHandler gui fn = do ref <- readIORef (xmlDocument gui)
 saveAsItemHandler :: Gui -> IO ()
 saveAsItemHandler = undefined
 
-spellBtnHandler :: Gui -> IO ()
-spellBtnHandler gui = do tks <- readIORef (selectedTkn gui)
-                         case tks of
-                              [] -> showError "Please select some tokens first!"
-                              ts -> do addToErrors gui e
-                                       clearBtnHandler gui
-                                       where e = (Error (Errtoks $ unwords . (map tokenId) $ ts)
-                                                        (TypeSpelling Spelling)
-                                                        Nothing
-                                                        Nothing)
 tokenId :: Token -> String
 tokenId (Token (Token_Attrs idx) _) = idx
-
-frecBtnHandler :: Gui -> TreeView -> IO ()
-frecBtnHandler gui view = do row <- (treeViewGetSelection view >>= treeSelectionGetSelectedRows)
-                             tks <- readIORef (selectedTkn gui)
-                             case tks of
-                                  [] -> showError "Please select some tokens first"
-                                  ts -> case row of
-                                             [path] -> do (EType _ content) <- (\s -> s `treeStoreGetValue` path) =<< formStore
-                                                          case content of
-                                                               Nothing -> showError "Select a leaf."
-                                                               Just etype -> do addToErrors gui e
-                                                                                clearBtnHandler gui
-                                                                                where e = (Error (Errtoks $ unwords . (map tokenId) $ ts)
-                                                                                                 (TypeForm etype)
-                                                                                                  Nothing
-                                                                                                  Nothing)
-                                             _ -> showError "Please select one item."
 
 clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
@@ -224,6 +183,7 @@ loadFile gui fn = do
                tagtable <- textBufferGetTagTable tb
                readCorpus c tb gui
 
+readCorpus :: Corpus -> TextBuffer -> Gui -> IO ()
 readCorpus corpus@(Corpus (Tokens _ ts) (Errors es)) tb gui =
         do putStrLn "Indexing tokens..."
            updateRef (tokenArray gui) tokens
@@ -282,7 +242,7 @@ updateRef' ref act = do var <- readIORef ref
                         a'  <- act var
                         writeIORef ref (Just a')
 
-addToErrors :: Gui -> Error -> IO ()
+addToErrors :: Gui -> Record -> IO ()
 addToErrors gui err = do ref <- readIORef (xmlDocument gui)
                          case ref of
                               Just doc -> writeIORef (xmlDocument gui) (Just $ (ate err) doc)
@@ -292,7 +252,7 @@ addToErrors gui err = do ref <- readIORef (xmlDocument gui)
                                                then crp
                                                else Corpus ts (Errors (e:es))
 
-removeFromErrors :: Gui -> Error -> IO ()
+removeFromErrors :: Gui -> Record -> IO ()
 removeFromErrors gui err = do ref <- readIORef (xmlDocument gui)
                               case ref of
                                    Just doc -> writeIORef (xmlDocument gui) (Just $ (rfe err) doc)

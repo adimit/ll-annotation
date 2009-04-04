@@ -8,41 +8,97 @@ import Text.XML.HaXml.OneOfN
 
 data Corpus = Corpus Tokens Errors
             deriving (Eq,Show)
-newtype Errors = Errors [Error] 		deriving (Eq,Show)
+newtype Errors = Errors [Record] 		deriving (Eq,Show)
 data Tokens = Tokens Tokens_Attrs [Token]
             deriving (Eq,Show)
 data Tokens_Attrs = Tokens_Attrs
     { tokensAmount :: String
     } deriving (Eq,Show)
+data Record = Record Errtoks Error (Maybe Target) (Maybe Comment)
+            deriving (Eq,Show)
 data Errtoks = Errtoks
     { errtoksIdx :: String
     } deriving (Eq,Show)
-data Error = Error Errtoks Type (Maybe Target) (Maybe Comment)
+data Error = Error Error_Attrs (Maybe Error_)
            deriving (Eq,Show)
-data Type = TypeForm Form
-          | TypeGrammar Grammar
-          | TypeSpelling Spelling
-          | TypeGibberish Gibberish
-          deriving (Eq,Show)
-data Form = FormLexical Lexical
-          | FormUnknown Unknown
-          deriving (Eq,Show)
-data Grammar = GrammarAgreement Agreement
-             | GrammarOmission Omission
-             | GrammarUnknown Unknown
-             deriving (Eq,Show)
-data Spelling = Spelling 		deriving (Eq,Show)
-data Gibberish = Gibberish 		deriving (Eq,Show)
-data Unknown = Unknown 		deriving (Eq,Show)
-data Lexical = Lexical 		deriving (Eq,Show)
-data Agreement = Agreement 		deriving (Eq,Show)
-data Omission = Omission
-    { omissionType :: Omission_type
+data Error_Attrs = Error_Attrs
+    { errorTransfer :: (Maybe Error_transfer)
     } deriving (Eq,Show)
-data Omission_type = Omission_type_verb  |  Omission_type_subject
-                      |  Omission_type_dirobject  |  Omission_type_indobject  | 
-                     Omission_type_preposition  |  Omission_type_other
-                   deriving (Eq,Show)
+data Error_ = Error_Context Context
+            | Error_Grammar Grammar
+            | Error_Spelling Spelling
+            | Error_Gibberish Gibberish
+            deriving (Eq,Show)
+data Error_transfer = Error_transfer_true
+                    deriving (Eq,Show)
+newtype Context = Context (Maybe Context_) 		deriving (Eq,Show)
+data Context_ = Context_Lexical Lexical
+              | Context_Idiom Idiom
+              deriving (Eq,Show)
+data Grammar = Grammar Grammar_Attrs (Maybe Grammar_)
+             deriving (Eq,Show)
+data Grammar_Attrs = Grammar_Attrs
+    { grammarEcontext :: (Maybe String)
+    } deriving (Eq,Show)
+data Grammar_ = Grammar_Agreement Agreement
+              | Grammar_Omission Omission
+              | Grammar_Wo Wo
+              | Grammar_Morphology Morphology
+              | Grammar_Redundancy Redundancy
+              deriving (Eq,Show)
+newtype Spelling = Spelling (Maybe Spelling_) 		deriving (Eq,Show)
+data Spelling_ = Spelling_Homonymy Homonymy
+               | Spelling_Register Register
+               | Spelling_Diacritics Diacritics
+               | Spelling_Local Local
+               deriving (Eq,Show)
+data Gibberish = Gibberish 		deriving (Eq,Show)
+data Lexical = Lexical 		deriving (Eq,Show)
+newtype Agreement = Agreement (Maybe Agreement_) 		deriving (Eq,Show)
+data Agreement_ = Agreement_Number Number
+                | Agreement_Gender Gender
+                | Agreement_Case Case
+                | Agreement_Person Person
+                | Agreement_Tense Tense
+                deriving (Eq,Show)
+newtype Omission = Omission (Maybe Omission_) 		deriving (Eq,Show)
+data Omission_ = Omission_Subject Subject
+               | Omission_Predicate Predicate
+               | Omission_Object Object
+               | Omission_Article Article
+               | Omission_Preposition Preposition
+               deriving (Eq,Show)
+newtype Object = Object (Maybe Object_) 		deriving (Eq,Show)
+data Object_ = Object_Direct Direct
+             | Object_Indirect Indirect
+             deriving (Eq,Show)
+newtype Morphology = Morphology (Maybe Morphology_) 		deriving (Eq,Show)
+data Morphology_ = Morphology_Derivation Derivation
+                 | Morphology_Compounding Compounding
+                 | Morphology_Inflection Inflection
+                 deriving (Eq,Show)
+data Number = Number 		deriving (Eq,Show)
+data Gender = Gender 		deriving (Eq,Show)
+data Case = Case 		deriving (Eq,Show)
+data Tense = Tense 		deriving (Eq,Show)
+data Person = Person 		deriving (Eq,Show)
+data Subject = Subject 		deriving (Eq,Show)
+data Predicate = Predicate 		deriving (Eq,Show)
+data Article = Article 		deriving (Eq,Show)
+data Preposition = Preposition 		deriving (Eq,Show)
+data Wo = Wo 		deriving (Eq,Show)
+data Redundancy = Redundancy 		deriving (Eq,Show)
+data Homonymy = Homonymy 		deriving (Eq,Show)
+data Register = Register 		deriving (Eq,Show)
+data Diacritics = Diacritics 		deriving (Eq,Show)
+data Local = Local 		deriving (Eq,Show)
+data Lexis = Lexis 		deriving (Eq,Show)
+data Idiom = Idiom 		deriving (Eq,Show)
+data Direct = Direct 		deriving (Eq,Show)
+data Indirect = Indirect 		deriving (Eq,Show)
+data Derivation = Derivation 		deriving (Eq,Show)
+data Compounding = Compounding 		deriving (Eq,Show)
+data Inflection = Inflection 		deriving (Eq,Show)
 newtype Comment = Comment String 		deriving (Eq,Show)
 newtype Target = Target String 		deriving (Eq,Show)
 data Token = Token Token_Attrs String
@@ -94,6 +150,19 @@ instance XmlAttributes Tokens_Attrs where
         [ toAttrFrStr "amount" (tokensAmount v)
         ]
 
+instance HTypeable Record where
+    toHType x = Defined "record" [] []
+instance XmlContent Record where
+    toContents (Record a b c d) =
+        [CElem (Elem "record" [] (toContents a ++ toContents b ++
+                                  maybe [] toContents c ++ maybe [] toContents d)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["record"]
+        ; interior e $ return (Record) `apply` parseContents
+                       `apply` parseContents `apply` optional parseContents
+                       `apply` optional parseContents
+        } `adjustErr` ("in <record>, "++)
+
 instance HTypeable Errtoks where
     toHType x = Defined "errtoks" [] []
 instance XmlContent Errtoks where
@@ -115,79 +184,122 @@ instance XmlAttributes Errtoks where
 instance HTypeable Error where
     toHType x = Defined "error" [] []
 instance XmlContent Error where
-    toContents (Error a b c d) =
-        [CElem (Elem "error" [] (toContents a ++ toContents b ++
-                                 maybe [] toContents c ++ maybe [] toContents d)) ()]
+    toContents (Error as a) =
+        [CElem (Elem "error" (toAttrs as) (maybe [] toContents a)) ()]
     parseContents = do
-        { e@(Elem _ [] _) <- element ["error"]
-        ; interior e $ return (Error) `apply` parseContents
-                       `apply` parseContents `apply` optional parseContents
+        { e@(Elem _ as _) <- element ["error"]
+        ; interior e $ return (Error (fromAttrs as))
                        `apply` optional parseContents
         } `adjustErr` ("in <error>, "++)
+instance XmlAttributes Error_Attrs where
+    fromAttrs as =
+        Error_Attrs
+          { errorTransfer = possibleA fromAttrToTyp "transfer" as
+          }
+    toAttrs v = catMaybes 
+        [ maybeToAttr toAttrFrTyp "transfer" (errorTransfer v)
+        ]
 
-instance HTypeable Type where
-    toHType x = Defined "type" [] []
-instance XmlContent Type where
-    toContents (TypeForm a) =
-        [CElem (Elem "type" [] (toContents a) ) ()]
-    toContents (TypeGrammar a) =
-        [CElem (Elem "type" [] (toContents a) ) ()]
-    toContents (TypeSpelling a) =
-        [CElem (Elem "type" [] (toContents a) ) ()]
-    toContents (TypeGibberish a) =
-        [CElem (Elem "type" [] (toContents a) ) ()]
-    parseContents = do 
-        { e@(Elem _ [] _) <- element ["type"]
-        ; interior e $ oneOf
-            [ return (TypeForm) `apply` parseContents
-            , return (TypeGrammar) `apply` parseContents
-            , return (TypeSpelling) `apply` parseContents
-            , return (TypeGibberish) `apply` parseContents
-            ] `adjustErr` ("in <type>, "++)
-        }
+instance HTypeable Error_ where
+    toHType x = Defined "error" [] []
+instance XmlContent Error_ where
+    toContents (Error_Context a) = toContents a
+    toContents (Error_Grammar a) = toContents a
+    toContents (Error_Spelling a) = toContents a
+    toContents (Error_Gibberish a) = toContents a
+    parseContents = oneOf
+        [ return (Error_Context) `apply` parseContents
+        , return (Error_Grammar) `apply` parseContents
+        , return (Error_Spelling) `apply` parseContents
+        , return (Error_Gibberish) `apply` parseContents
+        ] `adjustErr` ("in <error>, "++)
 
-instance HTypeable Form where
-    toHType x = Defined "form" [] []
-instance XmlContent Form where
-    toContents (FormLexical a) =
-        [CElem (Elem "form" [] (toContents a) ) ()]
-    toContents (FormUnknown a) =
-        [CElem (Elem "form" [] (toContents a) ) ()]
-    parseContents = do 
-        { e@(Elem _ [] _) <- element ["form"]
-        ; interior e $ oneOf
-            [ return (FormLexical) `apply` parseContents
-            , return (FormUnknown) `apply` parseContents
-            ] `adjustErr` ("in <form>, "++)
-        }
+instance XmlAttrType Error_transfer where
+    fromAttrToTyp n (n',v)
+        | n==n'     = translate (attr2str v)
+        | otherwise = Nothing
+      where translate "true" = Just Error_transfer_true
+            translate _ = Nothing
+    toAttrFrTyp n Error_transfer_true = Just (n, str2attr "true")
+
+instance HTypeable Context where
+    toHType x = Defined "context" [] []
+instance XmlContent Context where
+    toContents (Context a) =
+        [CElem (Elem "context" [] (maybe [] toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["context"]
+        ; interior e $ return (Context) `apply` optional parseContents
+        } `adjustErr` ("in <context>, "++)
+
+instance HTypeable Context_ where
+    toHType x = Defined "context" [] []
+instance XmlContent Context_ where
+    toContents (Context_Lexical a) = toContents a
+    toContents (Context_Idiom a) = toContents a
+    parseContents = oneOf
+        [ return (Context_Lexical) `apply` parseContents
+        , return (Context_Idiom) `apply` parseContents
+        ] `adjustErr` ("in <context>, "++)
 
 instance HTypeable Grammar where
     toHType x = Defined "grammar" [] []
 instance XmlContent Grammar where
-    toContents (GrammarAgreement a) =
-        [CElem (Elem "grammar" [] (toContents a) ) ()]
-    toContents (GrammarOmission a) =
-        [CElem (Elem "grammar" [] (toContents a) ) ()]
-    toContents (GrammarUnknown a) =
-        [CElem (Elem "grammar" [] (toContents a) ) ()]
-    parseContents = do 
-        { e@(Elem _ [] _) <- element ["grammar"]
-        ; interior e $ oneOf
-            [ return (GrammarAgreement) `apply` parseContents
-            , return (GrammarOmission) `apply` parseContents
-            , return (GrammarUnknown) `apply` parseContents
-            ] `adjustErr` ("in <grammar>, "++)
-        }
+    toContents (Grammar as a) =
+        [CElem (Elem "grammar" (toAttrs as) (maybe [] toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ as _) <- element ["grammar"]
+        ; interior e $ return (Grammar (fromAttrs as))
+                       `apply` optional parseContents
+        } `adjustErr` ("in <grammar>, "++)
+instance XmlAttributes Grammar_Attrs where
+    fromAttrs as =
+        Grammar_Attrs
+          { grammarEcontext = possibleA fromAttrToStr "econtext" as
+          }
+    toAttrs v = catMaybes 
+        [ maybeToAttr toAttrFrStr "econtext" (grammarEcontext v)
+        ]
+
+instance HTypeable Grammar_ where
+    toHType x = Defined "grammar" [] []
+instance XmlContent Grammar_ where
+    toContents (Grammar_Agreement a) = toContents a
+    toContents (Grammar_Omission a) = toContents a
+    toContents (Grammar_Wo a) = toContents a
+    toContents (Grammar_Morphology a) = toContents a
+    toContents (Grammar_Redundancy a) = toContents a
+    parseContents = oneOf
+        [ return (Grammar_Agreement) `apply` parseContents
+        , return (Grammar_Omission) `apply` parseContents
+        , return (Grammar_Wo) `apply` parseContents
+        , return (Grammar_Morphology) `apply` parseContents
+        , return (Grammar_Redundancy) `apply` parseContents
+        ] `adjustErr` ("in <grammar>, "++)
 
 instance HTypeable Spelling where
     toHType x = Defined "spelling" [] []
 instance XmlContent Spelling where
-    toContents Spelling =
-        [CElem (Elem "spelling" [] []) ()]
+    toContents (Spelling a) =
+        [CElem (Elem "spelling" [] (maybe [] toContents a)) ()]
     parseContents = do
-        { (Elem _ as []) <- element ["spelling"]
-        ; return Spelling
+        { e@(Elem _ [] _) <- element ["spelling"]
+        ; interior e $ return (Spelling) `apply` optional parseContents
         } `adjustErr` ("in <spelling>, "++)
+
+instance HTypeable Spelling_ where
+    toHType x = Defined "spelling" [] []
+instance XmlContent Spelling_ where
+    toContents (Spelling_Homonymy a) = toContents a
+    toContents (Spelling_Register a) = toContents a
+    toContents (Spelling_Diacritics a) = toContents a
+    toContents (Spelling_Local a) = toContents a
+    parseContents = oneOf
+        [ return (Spelling_Homonymy) `apply` parseContents
+        , return (Spelling_Register) `apply` parseContents
+        , return (Spelling_Diacritics) `apply` parseContents
+        , return (Spelling_Local) `apply` parseContents
+        ] `adjustErr` ("in <spelling>, "++)
 
 instance HTypeable Gibberish where
     toHType x = Defined "gibberish" [] []
@@ -198,16 +310,6 @@ instance XmlContent Gibberish where
         { (Elem _ as []) <- element ["gibberish"]
         ; return Gibberish
         } `adjustErr` ("in <gibberish>, "++)
-
-instance HTypeable Unknown where
-    toHType x = Defined "unknown" [] []
-instance XmlContent Unknown where
-    toContents Unknown =
-        [CElem (Elem "unknown" [] []) ()]
-    parseContents = do
-        { (Elem _ as []) <- element ["unknown"]
-        ; return Unknown
-        } `adjustErr` ("in <unknown>, "++)
 
 instance HTypeable Lexical where
     toHType x = Defined "lexical" [] []
@@ -222,48 +324,316 @@ instance XmlContent Lexical where
 instance HTypeable Agreement where
     toHType x = Defined "agreement" [] []
 instance XmlContent Agreement where
-    toContents Agreement =
-        [CElem (Elem "agreement" [] []) ()]
+    toContents (Agreement a) =
+        [CElem (Elem "agreement" [] (maybe [] toContents a)) ()]
     parseContents = do
-        { (Elem _ as []) <- element ["agreement"]
-        ; return Agreement
+        { e@(Elem _ [] _) <- element ["agreement"]
+        ; interior e $ return (Agreement) `apply` optional parseContents
         } `adjustErr` ("in <agreement>, "++)
+
+instance HTypeable Agreement_ where
+    toHType x = Defined "agreement" [] []
+instance XmlContent Agreement_ where
+    toContents (Agreement_Number a) = toContents a
+    toContents (Agreement_Gender a) = toContents a
+    toContents (Agreement_Case a) = toContents a
+    toContents (Agreement_Person a) = toContents a
+    toContents (Agreement_Tense a) = toContents a
+    parseContents = oneOf
+        [ return (Agreement_Number) `apply` parseContents
+        , return (Agreement_Gender) `apply` parseContents
+        , return (Agreement_Case) `apply` parseContents
+        , return (Agreement_Person) `apply` parseContents
+        , return (Agreement_Tense) `apply` parseContents
+        ] `adjustErr` ("in <agreement>, "++)
 
 instance HTypeable Omission where
     toHType x = Defined "omission" [] []
 instance XmlContent Omission where
-    toContents as =
-        [CElem (Elem "omission" (toAttrs as) []) ()]
+    toContents (Omission a) =
+        [CElem (Elem "omission" [] (maybe [] toContents a)) ()]
     parseContents = do
-        { (Elem _ as []) <- element ["omission"]
-        ; return (fromAttrs as)
+        { e@(Elem _ [] _) <- element ["omission"]
+        ; interior e $ return (Omission) `apply` optional parseContents
         } `adjustErr` ("in <omission>, "++)
-instance XmlAttributes Omission where
-    fromAttrs as =
-        Omission
-          { omissionType = definiteA fromAttrToTyp "omission" "type" as
-          }
-    toAttrs v = catMaybes 
-        [ toAttrFrTyp "type" (omissionType v)
-        ]
 
-instance XmlAttrType Omission_type where
-    fromAttrToTyp n (n',v)
-        | n==n'     = translate (attr2str v)
-        | otherwise = Nothing
-      where translate "verb" = Just Omission_type_verb
-            translate "subject" = Just Omission_type_subject
-            translate "dirobject" = Just Omission_type_dirobject
-            translate "indobject" = Just Omission_type_indobject
-            translate "preposition" = Just Omission_type_preposition
-            translate "other" = Just Omission_type_other
-            translate _ = Nothing
-    toAttrFrTyp n Omission_type_verb = Just (n, str2attr "verb")
-    toAttrFrTyp n Omission_type_subject = Just (n, str2attr "subject")
-    toAttrFrTyp n Omission_type_dirobject = Just (n, str2attr "dirobject")
-    toAttrFrTyp n Omission_type_indobject = Just (n, str2attr "indobject")
-    toAttrFrTyp n Omission_type_preposition = Just (n, str2attr "preposition")
-    toAttrFrTyp n Omission_type_other = Just (n, str2attr "other")
+instance HTypeable Omission_ where
+    toHType x = Defined "omission" [] []
+instance XmlContent Omission_ where
+    toContents (Omission_Subject a) = toContents a
+    toContents (Omission_Predicate a) = toContents a
+    toContents (Omission_Object a) = toContents a
+    toContents (Omission_Article a) = toContents a
+    toContents (Omission_Preposition a) = toContents a
+    parseContents = oneOf
+        [ return (Omission_Subject) `apply` parseContents
+        , return (Omission_Predicate) `apply` parseContents
+        , return (Omission_Object) `apply` parseContents
+        , return (Omission_Article) `apply` parseContents
+        , return (Omission_Preposition) `apply` parseContents
+        ] `adjustErr` ("in <omission>, "++)
+
+instance HTypeable Object where
+    toHType x = Defined "object" [] []
+instance XmlContent Object where
+    toContents (Object a) =
+        [CElem (Elem "object" [] (maybe [] toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["object"]
+        ; interior e $ return (Object) `apply` optional parseContents
+        } `adjustErr` ("in <object>, "++)
+
+instance HTypeable Object_ where
+    toHType x = Defined "object" [] []
+instance XmlContent Object_ where
+    toContents (Object_Direct a) = toContents a
+    toContents (Object_Indirect a) = toContents a
+    parseContents = oneOf
+        [ return (Object_Direct) `apply` parseContents
+        , return (Object_Indirect) `apply` parseContents
+        ] `adjustErr` ("in <object>, "++)
+
+instance HTypeable Morphology where
+    toHType x = Defined "morphology" [] []
+instance XmlContent Morphology where
+    toContents (Morphology a) =
+        [CElem (Elem "morphology" [] (maybe [] toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["morphology"]
+        ; interior e $ return (Morphology) `apply` optional parseContents
+        } `adjustErr` ("in <morphology>, "++)
+
+instance HTypeable Morphology_ where
+    toHType x = Defined "morphology" [] []
+instance XmlContent Morphology_ where
+    toContents (Morphology_Derivation a) = toContents a
+    toContents (Morphology_Compounding a) = toContents a
+    toContents (Morphology_Inflection a) = toContents a
+    parseContents = oneOf
+        [ return (Morphology_Derivation) `apply` parseContents
+        , return (Morphology_Compounding) `apply` parseContents
+        , return (Morphology_Inflection) `apply` parseContents
+        ] `adjustErr` ("in <morphology>, "++)
+
+instance HTypeable Number where
+    toHType x = Defined "number" [] []
+instance XmlContent Number where
+    toContents Number =
+        [CElem (Elem "number" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["number"]
+        ; return Number
+        } `adjustErr` ("in <number>, "++)
+
+instance HTypeable Gender where
+    toHType x = Defined "gender" [] []
+instance XmlContent Gender where
+    toContents Gender =
+        [CElem (Elem "gender" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["gender"]
+        ; return Gender
+        } `adjustErr` ("in <gender>, "++)
+
+instance HTypeable Case where
+    toHType x = Defined "case" [] []
+instance XmlContent Case where
+    toContents Case =
+        [CElem (Elem "case" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["case"]
+        ; return Case
+        } `adjustErr` ("in <case>, "++)
+
+instance HTypeable Tense where
+    toHType x = Defined "tense" [] []
+instance XmlContent Tense where
+    toContents Tense =
+        [CElem (Elem "tense" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["tense"]
+        ; return Tense
+        } `adjustErr` ("in <tense>, "++)
+
+instance HTypeable Person where
+    toHType x = Defined "person" [] []
+instance XmlContent Person where
+    toContents Person =
+        [CElem (Elem "person" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["person"]
+        ; return Person
+        } `adjustErr` ("in <person>, "++)
+
+instance HTypeable Subject where
+    toHType x = Defined "subject" [] []
+instance XmlContent Subject where
+    toContents Subject =
+        [CElem (Elem "subject" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["subject"]
+        ; return Subject
+        } `adjustErr` ("in <subject>, "++)
+
+instance HTypeable Predicate where
+    toHType x = Defined "predicate" [] []
+instance XmlContent Predicate where
+    toContents Predicate =
+        [CElem (Elem "predicate" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["predicate"]
+        ; return Predicate
+        } `adjustErr` ("in <predicate>, "++)
+
+instance HTypeable Article where
+    toHType x = Defined "article" [] []
+instance XmlContent Article where
+    toContents Article =
+        [CElem (Elem "article" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["article"]
+        ; return Article
+        } `adjustErr` ("in <article>, "++)
+
+instance HTypeable Preposition where
+    toHType x = Defined "preposition" [] []
+instance XmlContent Preposition where
+    toContents Preposition =
+        [CElem (Elem "preposition" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["preposition"]
+        ; return Preposition
+        } `adjustErr` ("in <preposition>, "++)
+
+instance HTypeable Wo where
+    toHType x = Defined "wo" [] []
+instance XmlContent Wo where
+    toContents Wo =
+        [CElem (Elem "wo" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["wo"]
+        ; return Wo
+        } `adjustErr` ("in <wo>, "++)
+
+instance HTypeable Redundancy where
+    toHType x = Defined "redundancy" [] []
+instance XmlContent Redundancy where
+    toContents Redundancy =
+        [CElem (Elem "redundancy" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["redundancy"]
+        ; return Redundancy
+        } `adjustErr` ("in <redundancy>, "++)
+
+instance HTypeable Homonymy where
+    toHType x = Defined "homonymy" [] []
+instance XmlContent Homonymy where
+    toContents Homonymy =
+        [CElem (Elem "homonymy" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["homonymy"]
+        ; return Homonymy
+        } `adjustErr` ("in <homonymy>, "++)
+
+instance HTypeable Register where
+    toHType x = Defined "register" [] []
+instance XmlContent Register where
+    toContents Register =
+        [CElem (Elem "register" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["register"]
+        ; return Register
+        } `adjustErr` ("in <register>, "++)
+
+instance HTypeable Diacritics where
+    toHType x = Defined "diacritics" [] []
+instance XmlContent Diacritics where
+    toContents Diacritics =
+        [CElem (Elem "diacritics" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["diacritics"]
+        ; return Diacritics
+        } `adjustErr` ("in <diacritics>, "++)
+
+instance HTypeable Local where
+    toHType x = Defined "local" [] []
+instance XmlContent Local where
+    toContents Local =
+        [CElem (Elem "local" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["local"]
+        ; return Local
+        } `adjustErr` ("in <local>, "++)
+
+instance HTypeable Lexis where
+    toHType x = Defined "lexis" [] []
+instance XmlContent Lexis where
+    toContents Lexis =
+        [CElem (Elem "lexis" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["lexis"]
+        ; return Lexis
+        } `adjustErr` ("in <lexis>, "++)
+
+instance HTypeable Idiom where
+    toHType x = Defined "idiom" [] []
+instance XmlContent Idiom where
+    toContents Idiom =
+        [CElem (Elem "idiom" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["idiom"]
+        ; return Idiom
+        } `adjustErr` ("in <idiom>, "++)
+
+instance HTypeable Direct where
+    toHType x = Defined "direct" [] []
+instance XmlContent Direct where
+    toContents Direct =
+        [CElem (Elem "direct" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["direct"]
+        ; return Direct
+        } `adjustErr` ("in <direct>, "++)
+
+instance HTypeable Indirect where
+    toHType x = Defined "indirect" [] []
+instance XmlContent Indirect where
+    toContents Indirect =
+        [CElem (Elem "indirect" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["indirect"]
+        ; return Indirect
+        } `adjustErr` ("in <indirect>, "++)
+
+instance HTypeable Derivation where
+    toHType x = Defined "derivation" [] []
+instance XmlContent Derivation where
+    toContents Derivation =
+        [CElem (Elem "derivation" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["derivation"]
+        ; return Derivation
+        } `adjustErr` ("in <derivation>, "++)
+
+instance HTypeable Compounding where
+    toHType x = Defined "compounding" [] []
+instance XmlContent Compounding where
+    toContents Compounding =
+        [CElem (Elem "compounding" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["compounding"]
+        ; return Compounding
+        } `adjustErr` ("in <compounding>, "++)
+
+instance HTypeable Inflection where
+    toHType x = Defined "inflection" [] []
+instance XmlContent Inflection where
+    toContents Inflection =
+        [CElem (Elem "inflection" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["inflection"]
+        ; return Inflection
+        } `adjustErr` ("in <inflection>, "++)
 
 instance HTypeable Comment where
     toHType x = Defined "comment" [] []
