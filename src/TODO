@@ -1,4 +1,4 @@
 - tokenizer can't handle unicode yet.
 - GUI crashes on non-file input in CTRL-L widget in file chooser.
-- find a better alternative for no-op in IO () than putStr "".
 - Use Unicode in GTK+ widgets.
+- Optimize creating and applying of tags.

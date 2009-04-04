@@ -225,20 +225,24 @@ loadFile gui fn = do
                readCorpus c tb gui
 
 readCorpus corpus@(Corpus (Tokens _ ts) (Errors es)) tb gui =
-        do updateRef (tokenArray gui) tokens
+        do putStrLn "Indexing tokens..."
+           updateRef (tokenArray gui) tokens
+           putStrLn "Filling Buffer..."
            tb `textBufferSetText` (concat . (map tokenString) $ tokenList)
            tt <- textBufferGetTagTable tb
+           putStrLn "Creating tags..."
            tags <- forM tokenList (token2Tag gui tt)
+           putStrLn "Applying tags..."
            applyTags tb tags tokenList
-           return ()
+           putStrLn "Finished."
            where tokens = xmlToArray corpus
                  tokenList = elems tokens
 
 token2Tag :: Gui -> TextTagTable -> Token -> IO TextTag
-token2Tag gui tt (Token (Token_Attrs idx) _) = do tag <- textTagNew $ Just idx
-                                                  tag `onTextTagEvent` (tagEventHandler gui idx)
-                                                  tt `textTagTableAdd` tag
-                                                  return tag
+token2Tag gui tt token@(Token (Token_Attrs idx) _) = do tag <- textTagNew $ Just idx
+                                                        tag `onTextTagEvent` (tagEventHandler gui token)
+                                                        tt `textTagTableAdd` tag
+                                                        return tag
 
 applyTags :: TextBuffer -> [TextTag] -> [Token] -> IO ()
 applyTags tb tags tokens = do tt <- textBufferGetTagTable tb
@@ -253,10 +257,14 @@ applyTags tb tags tokens = do tt <- textBufferGetTagTable tb
                                     applyTag [] [] _ = return ()
                                     applyTag _ _ _ = error "Aleks fucked up." -- this shouldn't happen
 
-type TokenIndex = String
-
-tagEventHandler :: Gui -> TokenIndex -> Old.Event -> TextIter -> IO ()
-tagEventHandler gui i e _ = undefined
+tagEventHandler :: Gui -> Token -> Old.Event -> TextIter -> IO ()
+tagEventHandler gui t (Old.Button _ Old.SingleClick _ _ _ _ Old.LeftButton  _ _) _ = do
+    seltokens <- readIORef (selectedTkn gui)
+    if t `elem` seltokens
+       then writeIORef (selectedTkn gui) (t `delete` seltokens)
+       else writeIORef (selectedTkn gui) (t:seltokens)
+    putTokensOnLabel gui (tokenLabel gui)
+tagEventHandler _ _ _ _ = return ()
 
 putTokensOnLabel :: Gui -> Label -> IO ()
 putTokensOnLabel gui l = do tkns <- readIORef (selectedTkn gui)
