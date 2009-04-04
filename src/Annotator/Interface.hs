@@ -37,31 +37,6 @@ import Text.XML.HaXml.XmlContent (XmlContent, fWriteXml)
 
 import Data.Array
 
-token2Tag :: Gui -> TextTagTable -> Token -> IO TextTag
-token2Tag gui tt token@(Token (Token_Attrs idx) _) = do tag <- textTagNew $ Just idx
-                                                        tag `onTextTagEvent` (tagEventHandler gui token)
-                                                        tt `textTagTableAdd` tag
-                                                        return tag
-
--- Builds a GTK file Chooser to open files.
-constructOpenFileChooser :: Gui -> IO FileChooserDialog
-constructOpenFileChooser gui = do
-    fc <- fileChooserDialogNew (Just "Open Corpus")
-                               (Just (window gui))
-                               FileChooserActionOpen
-                               [("gtk-cancel",ResponseCancel),("gtk-open",ResponseAccept)]
-    fileChooserSetSelectMultiple fc False
-    ff <- xmlFileFilter
-    fileChooserAddFilter fc ff
-    return fc
-
--- Builds a GTK file filter to only allow XML documents.
-xmlFileFilter :: IO FileFilter
-xmlFileFilter = do ff <- fileFilterNew
-                   fileFilterSetName ff "XML files"
-                   fileFilterAddMimeType ff "text/xml"
-                   return ff
-
 -- | Entry to the GUI
 runGUI :: IO ()
 runGUI = do gui <- prepareGUI
@@ -104,6 +79,26 @@ prepareGUI = do
                              onDestroy w mainQuit
                              widgetShowAll w
                              return $ Right gui
+
+
+-- Builds a GTK file Chooser to open files.
+constructOpenFileChooser :: Gui -> IO FileChooserDialog
+constructOpenFileChooser gui = do
+    fc <- fileChooserDialogNew (Just "Open Corpus")
+                               (Just (window gui))
+                               FileChooserActionOpen
+                               [("gtk-cancel",ResponseCancel),("gtk-open",ResponseAccept)]
+    fileChooserSetSelectMultiple fc False
+    ff <- xmlFileFilter
+    fileChooserAddFilter fc ff
+    return fc
+
+-- Builds a GTK file filter to only allow XML documents.
+xmlFileFilter :: IO FileFilter
+xmlFileFilter = do ff <- fileFilterNew
+                   fileFilterSetName ff "XML files"
+                   fileFilterAddMimeType ff "text/xml"
+                   return ff
 
 -- Helper function to associate all controls with actions
 initControls :: Gui -> IO ()
@@ -200,4 +195,10 @@ applyTags tb tags tokens = do tt <- textBufferGetTagTable tb
                                              applyTag gs ts iter'
                                     applyTag [] [] _ = return ()
                                     applyTag _ _ _ = error "Aleks fucked up." -- this shouldn't happen
+
+token2Tag :: Gui -> TextTagTable -> Token -> IO TextTag
+token2Tag gui tt token@(Token (Token_Attrs idx) _) = do tag <- textTagNew $ Just idx
+                                                        tag `onTextTagEvent` (tagEventHandler gui token)
+                                                        tt `textTagTableAdd` tag
+                                                        return tag
 
