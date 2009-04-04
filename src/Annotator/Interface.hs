@@ -118,10 +118,10 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       errorView <- xmlGetWidget (xml gui) castToTreeView "errorView"
                       (initTreeView errorView) =<< errorStore
                       recordBtn <- xmlGetWidget (xml gui) castToButton "recordButton"
-                      recordBtn `onClicked` recordHandler gui
+                      recordBtn `onClicked` recordHandler gui errorView
                       return ()
 
-initTreeView :: (XmlContent a) => TreeView -> TreeStore (EType a) -> IO ()
+initTreeView :: TreeView -> TreeStore EType -> IO ()
 initTreeView view model =  do
                         view `treeViewSetModel` model
                         view `treeViewSetHeadersVisible` False
@@ -132,7 +132,13 @@ initTreeView view model =  do
                         view `treeViewAppendColumn` column
                         return ()
 
-recordHandler gui = undefined
+recordHandler gui view = do row <- (treeViewGetSelection view >>= treeSelectionGetSelectedRows)
+                            tokens <- readIORef (selectedTkn gui)
+                            case tokens of
+                                [] -> putStrLn "Please select some tokens."
+                                ts -> case row of
+                                          [path] -> undefined
+
 
 openItemHandler :: Gui -> IO ()
 openItemHandler gui = do fn <- openFileAction gui
