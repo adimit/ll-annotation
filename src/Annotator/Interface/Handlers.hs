@@ -31,6 +31,7 @@ recordHandler gui view =
                    [path] -> do (EType _ etype) <- (\store ->treeStoreGetValue store path) =<< errorStore
                                 record <- makeRecord gui etype
                                 addToErrorView gui record
+                                clearBtnHandler gui
                    _ -> putStrLn "Warning: Select one error type first."
        
 addToErrorView :: Gui -> Record -> IO ()
