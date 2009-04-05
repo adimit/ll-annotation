@@ -312,9 +312,9 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkStatusbar" id="statusbar1">
+          <widget class="GtkLabel" id="tindexLabel">
             <property name="visible">True</property>
-            <property name="spacing">2</property>
+            <property name="label" translatable="yes">[]</property>
           </widget>
           <packing>
             <property name="expand">False</property>

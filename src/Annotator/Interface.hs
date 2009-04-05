@@ -112,8 +112,8 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       deleteBtn <- xmlGetWidget (xml gui) castToButton "deleteButton"
                       errorView <- xmlGetWidget (xml gui) castToTreeView "errorView"
                       listView <- xmlGetWidget (xml gui) castToTreeView "treeView1"
+                      tokens <- readIORef (tokenArray gui)
                       (initTreeView errorView) =<< errorStore
-                      (initListView gui listView) =<< (readIORef (errorModel gui))
                       recordBtn <- xmlGetWidget (xml gui) castToButton "recordButton"
                       deleteBtn `onClicked` deleteHandler gui listView
                       recordBtn `onClicked` recordHandler gui errorView
@@ -131,12 +131,10 @@ initTreeView view model =  do
                         view `treeViewAppendColumn` column
                         return ()
 
-initListView :: Gui -> TreeView -> ListStore Record -> IO ()
-initListView gui view model = do
+initListView :: Array Int Token -> TreeView -> ListStore Record -> IO ()
+initListView tokens view model = do
     view `treeViewSetModel` model
     view `treeViewSetHeadersVisible` True
-    
-    tokens <- readIORef (tokenArray gui)
     
     columnTokens <- treeViewColumnNew
     rendererTokens <- cellRendererTextNew
@@ -152,23 +150,32 @@ initListView gui view model = do
     treeViewColumnSetTitle columnTrigger "Trigger"
     view `treeViewAppendColumn` columnTrigger
     
+    columnIndex <- treeViewColumnNew
+    rendererIndex <- cellRendererTextNew
+    treeViewColumnPackStart columnIndex rendererIndex True
+    cellLayoutSetAttributes columnIndex rendererIndex model $ \row -> [cellText := record2index row ]
+    treeViewColumnSetTitle columnIndex "Index"
+    view `treeViewAppendColumn` columnIndex
+
     columnType <- treeViewColumnNew
     rendererType <- cellRendererTextNew
     treeViewColumnPackStart columnType rendererType True
     cellLayoutSetAttributes columnType rendererType model $ \row -> [cellText := record2type row ]
     treeViewColumnSetTitle columnType "Type"
     view `treeViewAppendColumn` columnType
-    
+
     return ()
 
-record2tokens (Record _ (Errtoks errtoks) _ _ _) tokens = show $ (map (read . drop 1) (words errtoks)::[Int])
-
+record2tokens (Record _ (Errtoks errtoks) _ _ _) tokens = 
+        show $ map (tokenString . (tokens!) . read . drop 1) (words errtoks)
+record2index (Record _ (Errtoks errtoks) _ _ _) = drop 1 $ head $ words errtoks
 record2trigger (Record (Record_Attrs Nothing _) _ _ _ _) tokens = "N/A"
-record2trigger (Record (Record_Attrs (Just context) _) _ _ _ _) tokens = context
+record2trigger (Record (Record_Attrs (Just context) _) _ _ _ _) tokens = 
+        show $ map (tokenString . (tokens!) . read . drop 1) (words context)
 record2type (Record _ _ etype _ _) = show etype
 
-lookupIndices array = map (array!)
-                                
+lookupIndices array = map (tokenString . (array!))
+
 -- Queries the user for opening a file.
 openFileAction :: Gui -> IO (Maybe FilePath)
 openFileAction gui = do
@@ -216,6 +223,8 @@ readCorpus corpus@(Corpus (Tokens _ _) (Errors es)) tb gui =
            writeIORef (tokenArray gui) tokens
            putStrLn "Filling Buffer..."
            tb `textBufferSetText` (concat . (map tokenString) $ tokenList)
+           view <- xmlGetWidget (xml gui) castToTreeView "treeView1"
+           initListView tokens view =<< readIORef (errorModel gui)
            tt <- textBufferGetTagTable tb
            putStrLn "Creating tags..."
            tags <- forM tokenList (token2Tag gui tt)
@@ -223,8 +232,6 @@ readCorpus corpus@(Corpus (Tokens _ _) (Errors es)) tb gui =
            applyTags tb tags tokenList
            putStrLn "Reading in records..."
            forM_ es (addToErrorView gui)
-           putStrLn "Finished."
-           -- putStrLn $ show $ assocs tokens
            where tokens = xmlToArray corpus
                  tokenList = elems tokens
 
@@ -233,7 +240,7 @@ applyTags :: TextBuffer -> [TextTag] -> [Token] -> IO ()
 applyTags tb tags tokens = do iter <- textBufferGetStartIter tb
                               applyTag tags tokens iter
                               where applyTag :: [TextTag] -> [Token] -> TextIter -> IO ()
-                                    applyTag (g:gs) ((Token _ t):ts) iter = do 
+                                    applyTag (g:gs) ((Token _ t):ts) iter = do
                                              iter' <- textIterCopy iter
                                              textIterForwardChars iter' (length t)
                                              textBufferApplyTag tb g iter iter'

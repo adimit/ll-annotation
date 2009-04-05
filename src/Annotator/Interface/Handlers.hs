@@ -9,7 +9,9 @@ import Data.IORef
 import Data.List
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
+import Graphics.UI.Gtk.Glade
 import qualified Graphics.UI.Gtk.Gdk.Events as Old
+import System.Glib.Attributes
 
 deleteHandler :: Gui -> TreeView -> IO ()
 deleteHandler gui view = do
@@ -33,15 +35,25 @@ recordHandler gui view =
                                 addToErrorView gui record
                                 clearBtnHandler gui
                    _ -> putStrLn "Warning: Select one error type first."
-       
+
 addToErrorView :: Gui -> Record -> IO ()
-addToErrorView gui record =  
+addToErrorView gui record@(Record _ (Errtoks tokens) _ _ _) = do
         (\model -> model `listStorePrepend` record) =<< (readIORef (errorModel gui))
-                                             
+        highlightTags gui (words tokens)
+
 makeRecord :: Gui -> Error -> IO Record
 makeRecord gui etype = do triggers <- readIORef (trigger gui)
                           tokens  <- readIORef (selectedTkn gui)
                           return $ Record (Record_Attrs (Just $ token2string triggers) Nothing) (Errtoks $ token2string tokens) etype Nothing Nothing
+
+highlightTags gui tokens = do
+        buffer <- textViewGetBuffer (corpusView gui)
+        table <- textBufferGetTagTable buffer
+        forM_ tokens (\idx -> do
+                mtag <- table `textTagTableLookup` idx
+                case mtag of
+                        Nothing -> putStrLn "Warning: token tag not in table. Bad."
+                        Just tag -> set tag [ textTagBackground := "#dd8888" ])
 
 token2string :: [Token] -> String
 token2string = unwords . (map tokenId)
@@ -54,6 +66,9 @@ clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
                           putTokensOnLabels gui
 
 tagEventHandler :: Gui -> Token -> Old.Event -> TextIter -> IO ()
+tagEventHandler gui (Token (Token_Attrs t) _ ) (Old.Motion _ _ _ _ _ _ _ _ ) _ = do
+    label <- xmlGetWidget (xml gui) castToLabel "tindexLabel"
+    label `labelSetText` (drop 1 t)
 tagEventHandler gui t (Old.Button _ Old.SingleClick _ _ _ _ Old.LeftButton  _ _) _ = do
     tref <- readIORef (currentFocs gui)
     seltokens <- readIORef tref
