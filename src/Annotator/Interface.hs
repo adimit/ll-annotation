@@ -21,7 +21,7 @@ import Annotator.Interface.Models
 import Annotator.Interface.Handlers
 import Annotator.Interface.Util
 import Annotator.Interface.Types
-import Control.Monad (forM)
+import Control.Monad (forM,forM_)
 import Data.IORef
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
@@ -202,7 +202,7 @@ loadFile gui fn = do
                readCorpus c tb gui
 
 readCorpus :: Corpus -> TextBuffer -> Gui -> IO ()
-readCorpus corpus@(Corpus (Tokens _ _) (Errors _)) tb gui =
+readCorpus corpus@(Corpus (Tokens _ _) (Errors es)) tb gui =
         do putStrLn "Indexing tokens..."
            updateRef (tokenArray gui) tokens
            putStrLn "Filling Buffer..."
@@ -212,6 +212,8 @@ readCorpus corpus@(Corpus (Tokens _ _) (Errors _)) tb gui =
            tags <- forM tokenList (token2Tag gui tt)
            putStrLn "Applying tags..."
            applyTags tb tags tokenList
+           putStrLn "Reading in records..."
+           forM_ es (addToErrorView gui)
            putStrLn "Finished."
            where tokens = xmlToArray corpus
                  tokenList = elems tokens

@@ -28,13 +28,16 @@ addToRecords gui err = do ref <- readIORef (xmlDocument gui)
                           case ref of
                               Nothing  -> putStrLn "Warning, empty document!"
                               Just doc -> do writeIORef (xmlDocument gui) (Just $ ate err doc) 
-                                             emodel <- readIORef (errorModel gui)
-                                             emodel `listStorePrepend` err
+                                             addToErrorView gui err
                               where ate e c@(Corpus ts (Errors es)) = 
                                                              if e `elem` es
                                                                 then c
                                                                 else Corpus ts (Errors (e:es))
 
+addToErrorView :: Gui -> Record -> IO ()
+addToErrorView gui record =  
+        (\model -> model `listStorePrepend` record) =<< (readIORef (errorModel gui))
+                                             
 makeRecord :: Gui -> Error -> IO Record
 makeRecord gui etype = do triggers <- readIORef (trigger gui)
                           tokens  <- readIORef (selectedTkn gui)
