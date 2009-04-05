@@ -58,7 +58,7 @@ prepareGUI = do
                              tl       <- xmlGetWidget gladeXml castToLabel "tokenLabel"
                              textView  <- xmlGetWidget gladeXml castToTextView "corpusView"
                              trigButton  <- xmlGetWidget gladeXml castToToggleButton "triggerButton"
-                             nothingRef' <- newIORef Nothing
+                             nothingRef' <- newIORef (array (0,0) [])
                              nothingRef'' <- newIORef []
                              nothingRef''' <- newIORef Nothing
                              nothingRef'''' <- newIORef []
@@ -113,7 +113,7 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       errorView <- xmlGetWidget (xml gui) castToTreeView "errorView"
                       listView <- xmlGetWidget (xml gui) castToTreeView "treeView1"
                       (initTreeView errorView) =<< errorStore
-                      (initListView listView) =<< (readIORef (errorModel gui))
+                      (initListView gui listView) =<< (readIORef (errorModel gui))
                       recordBtn <- xmlGetWidget (xml gui) castToButton "recordButton"
                       deleteBtn `onClicked` deleteHandler gui listView
                       recordBtn `onClicked` recordHandler gui errorView
@@ -131,22 +131,24 @@ initTreeView view model =  do
                         view `treeViewAppendColumn` column
                         return ()
 
-initListView :: TreeView -> ListStore Record -> IO ()
-initListView view model = do
+initListView :: Gui -> TreeView -> ListStore Record -> IO ()
+initListView gui view model = do
     view `treeViewSetModel` model
     view `treeViewSetHeadersVisible` True
+    
+    tokens <- readIORef (tokenArray gui)
     
     columnTokens <- treeViewColumnNew
     rendererTokens <- cellRendererTextNew
     treeViewColumnPackStart columnTokens rendererTokens True
-    cellLayoutSetAttributes columnTokens rendererTokens model $ \row -> [cellText := record2tokens row ]
+    cellLayoutSetAttributes columnTokens rendererTokens model $ \row -> [cellText := record2tokens row tokens ]
     treeViewColumnSetTitle columnTokens "Error Tokens"
     view `treeViewAppendColumn` columnTokens
     
     columnTrigger <- treeViewColumnNew
     rendererTrigger <- cellRendererTextNew
     treeViewColumnPackStart columnTrigger rendererTrigger True
-    cellLayoutSetAttributes columnTrigger rendererTrigger model $ \row -> [cellText := record2trigger row ]
+    cellLayoutSetAttributes columnTrigger rendererTrigger model $ \row -> [cellText := record2trigger row tokens ]
     treeViewColumnSetTitle columnTrigger "Trigger"
     view `treeViewAppendColumn` columnTrigger
     
@@ -159,10 +161,14 @@ initListView view model = do
     
     return ()
 
-record2tokens (Record _ (Errtoks errtoks) _ _ _) = errtoks
-record2trigger (Record (Record_Attrs context _) _ _ _ _) = show context
+record2tokens (Record _ (Errtoks errtoks) _ _ _) tokens = show $ (map (read . drop 1) (words errtoks)::[Int])
+
+record2trigger (Record (Record_Attrs Nothing _) _ _ _ _) tokens = "N/A"
+record2trigger (Record (Record_Attrs (Just context) _) _ _ _ _) tokens = context
 record2type (Record _ _ etype _ _) = show etype
 
+lookupIndices array = map (array!)
+                                
 -- Queries the user for opening a file.
 openFileAction :: Gui -> IO (Maybe FilePath)
 openFileAction gui = do
@@ -207,7 +213,7 @@ loadFile gui fn = do
 readCorpus :: Corpus -> TextBuffer -> Gui -> IO ()
 readCorpus corpus@(Corpus (Tokens _ _) (Errors es)) tb gui =
         do putStrLn "Indexing tokens..."
-           updateRef (tokenArray gui) tokens
+           writeIORef (tokenArray gui) tokens
            putStrLn "Filling Buffer..."
            tb `textBufferSetText` (concat . (map tokenString) $ tokenList)
            tt <- textBufferGetTagTable tb
@@ -218,6 +224,7 @@ readCorpus corpus@(Corpus (Tokens _ _) (Errors es)) tb gui =
            putStrLn "Reading in records..."
            forM_ es (addToErrorView gui)
            putStrLn "Finished."
+           -- putStrLn $ show $ assocs tokens
            where tokens = xmlToArray corpus
                  tokenList = elems tokens
 

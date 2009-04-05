@@ -21,7 +21,7 @@ data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
                , trigger     :: IORef [Token]
                , errorModel  :: IORef (ListStore Record)
                , currentFocs :: IORef (IORef [Token])
-               , tokenArray  :: IORef (Maybe (Array Int Token))
+               , tokenArray  :: IORef (Array Int Token)
                , xmlDocument :: IORef (Maybe Corpus)
                }
 
