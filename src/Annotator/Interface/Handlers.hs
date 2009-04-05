@@ -50,6 +50,7 @@ clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
                           writeIORef (trigger     gui) []
                           writeIORef (currentFocs gui) (selectedTkn gui)
+                          (triggerBtn gui) `toggleButtonSetActive` False
                           putTokensOnLabels gui
 
 tagEventHandler :: Gui -> Token -> Old.Event -> TextIter -> IO ()
