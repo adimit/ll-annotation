@@ -16,8 +16,10 @@ data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
                , window      :: Window -- ^ The main window
                , xml         :: GladeXML -- ^ The underlying glade XML
                , tokenLabel  :: Label -- ^ The Label displaying tokens
+               , triggerBtn  :: ToggleButton
                , selectedTkn :: IORef [Token]
                , trigger     :: IORef [Token]
+               , currentFocs :: IORef (IORef [Token])
                , tokenArray  :: IORef (Maybe (Array Int Token))
                , xmlDocument :: IORef (Maybe Corpus)
                }

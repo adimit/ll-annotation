@@ -57,17 +57,21 @@ prepareGUI = do
                              w       <- xmlGetWidget gladeXml castToWindow windowMain
                              tl       <- xmlGetWidget gladeXml castToLabel "tokenLabel"
                              textView  <- xmlGetWidget gladeXml castToTextView "corpusView"
+                             trigButton  <- xmlGetWidget gladeXml castToToggleButton "triggerButton"
                              nothingRef' <- newIORef Nothing
                              nothingRef'' <- newIORef []
                              nothingRef''' <- newIORef Nothing
                              nothingRef'''' <- newIORef []
+                             somethingRef <- newIORef nothingRef''
                              let gui = Gui { corpusView  = textView
                                            , window      = w
                                            , xml         = gladeXml
                                            , tokenLabel  = tl
+                                           , triggerBtn  = trigButton
                                            , tokenArray  = nothingRef'
                                            , selectedTkn = nothingRef''
                                            , xmlDocument = nothingRef'''
+                                           , currentFocs = somethingRef
                                            , trigger     = nothingRef''''
                                            }
                              initControls gui
@@ -107,6 +111,7 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       (initTreeView errorView) =<< errorStore
                       recordBtn <- xmlGetWidget (xml gui) castToButton "recordButton"
                       recordBtn `onClicked` recordHandler gui errorView
+                      (triggerBtn gui) `afterToggled` triggerToggleHandler gui
                       return ()
 
 initTreeView :: TreeView -> TreeStore (EType Error) -> IO ()

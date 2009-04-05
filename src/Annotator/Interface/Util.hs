@@ -17,9 +17,13 @@ import Text.XML.HaXml.XmlContent.Haskell (readXml)
 
 import Data.Array
 
-putTokensOnLabel :: Gui -> Label -> IO ()
-putTokensOnLabel gui l = do tkns <- readIORef (selectedTkn gui)
-                            l `labelSetText` (show $ map tokenString (sort tkns))
+putTokensOnLabels :: Gui -> IO ()
+putTokensOnLabels gui = do tkns <- readIORef (selectedTkn gui)
+                           trigs <- readIORef (trigger gui)
+                           (tokenLabel gui) `labelSetText` (show $ map tokenString (sort tkns))
+                           (triggerBtn gui) `buttonSetLabel` (show $ map tokenString (sort trigs))
+                           
+                           
 
 tokenId :: Token -> String
 tokenId (Token (Token_Attrs idx) _) = idx

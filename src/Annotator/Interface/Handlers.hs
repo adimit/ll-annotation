@@ -9,20 +9,19 @@ import Data.List
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
 import qualified Graphics.UI.Gtk.Gdk.Events as Old
-import Text.XML.HaXml.XmlContent
 
 recordHandler :: Gui -> TreeView -> IO ()
 recordHandler gui view = 
     do tokens <- readIORef (selectedTkn gui)
        case tokens of
          [] -> putStrLn "Please select some tokens."
-         ts -> do paths <- treeSelectionGetSelectedRows =<< (treeViewGetSelection view)
-                  case paths of
-                    [path] -> do (EType _ etype) <- (\store ->treeStoreGetValue store path) =<< errorStore
-                                 record <- makeRecord etype ts
-                                 addToRecords gui record
-                                 return ()
-                    _ -> putStrLn "Warning: Select one error type first."
+         _ -> do paths <- treeSelectionGetSelectedRows =<< (treeViewGetSelection view)
+                 case paths of
+                   [path] -> do (EType _ etype) <- (\store ->treeStoreGetValue store path) =<< errorStore
+                                record <- makeRecord gui etype
+                                addToRecords gui record
+                                clearBtnHandler gui
+                   _ -> putStrLn "Warning: Select one error type first."
        
 addToRecords :: Gui -> Record -> IO ()
 addToRecords gui err = do ref <- readIORef (xmlDocument gui)
@@ -34,19 +33,33 @@ addToRecords gui err = do ref <- readIORef (xmlDocument gui)
                                                                 then c
                                                                 else Corpus ts (Errors (e:es))
 
-makeRecord :: Error -> [Token] -> IO Record
-makeRecord etype ts = return $ Record (Record_Attrs Nothing Nothing) (Errtoks $ unwords . (map tokenId) $ ts) etype Nothing Nothing
+makeRecord :: Gui -> Error -> IO Record
+makeRecord gui etype = do triggers <- readIORef (trigger gui)
+                          tokens  <- readIORef (selectedTkn gui)
+                          return $ Record (Record_Attrs (Just $ token2string triggers) Nothing) (Errtoks $ token2string tokens) etype Nothing Nothing
+
+token2string :: [Token] -> String
+token2string = unwords . (map tokenId)
 
 clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
-                          putTokensOnLabel gui (tokenLabel gui)
+                          writeIORef (trigger     gui) []
+                          writeIORef (currentFocs gui) (selectedTkn gui)
+                          putTokensOnLabels gui
 
 tagEventHandler :: Gui -> Token -> Old.Event -> TextIter -> IO ()
 tagEventHandler gui t (Old.Button _ Old.SingleClick _ _ _ _ Old.LeftButton  _ _) _ = do
-    seltokens <- readIORef (selectedTkn gui)
+    tref <- readIORef (currentFocs gui)
+    seltokens <- readIORef tref
     if t `elem` seltokens
-       then writeIORef (selectedTkn gui) (t `delete` seltokens)
-       else writeIORef (selectedTkn gui) (t:seltokens)
-    putTokensOnLabel gui (tokenLabel gui)
+       then writeIORef tref (t `delete` seltokens)
+       else writeIORef tref (t:seltokens)
+    putTokensOnLabels gui
 tagEventHandler _ _ _ _ = return ()
 
+
+triggerToggleHandler :: Gui -> IO ()
+triggerToggleHandler gui = do active <- toggleButtonGetActive (triggerBtn gui)
+                              if active
+                                 then writeIORef (currentFocs gui) (trigger gui)
+                                 else writeIORef (currentFocs gui) (selectedTkn gui)
