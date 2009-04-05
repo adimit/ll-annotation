@@ -27,7 +27,9 @@ addToRecords :: Gui -> Record -> IO ()
 addToRecords gui err = do ref <- readIORef (xmlDocument gui)
                           case ref of
                               Nothing  -> putStrLn "Warning, empty document!"
-                              Just doc -> writeIORef (xmlDocument gui) (Just $ ate err doc) 
+                              Just doc -> do writeIORef (xmlDocument gui) (Just $ ate err doc) 
+                                             emodel <- readIORef (errorModel gui)
+                                             emodel `listStorePrepend` err
                               where ate e c@(Corpus ts (Errors es)) = 
                                                              if e `elem` es
                                                                 then c

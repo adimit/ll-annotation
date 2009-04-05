@@ -19,6 +19,7 @@ data Gui = Gui { corpusView  :: TextView -- ^ The corpusView
                , triggerBtn  :: ToggleButton
                , selectedTkn :: IORef [Token]
                , trigger     :: IORef [Token]
+               , errorModel  :: IORef (ListStore Record)
                , currentFocs :: IORef (IORef [Token])
                , tokenArray  :: IORef (Maybe (Array Int Token))
                , xmlDocument :: IORef (Maybe Corpus)

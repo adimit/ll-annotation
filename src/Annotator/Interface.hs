@@ -62,6 +62,7 @@ prepareGUI = do
                              nothingRef'' <- newIORef []
                              nothingRef''' <- newIORef Nothing
                              nothingRef'''' <- newIORef []
+                             listRef <- newIORef =<< (listStoreNew [])
                              somethingRef <- newIORef nothingRef''
                              let gui = Gui { corpusView  = textView
                                            , window      = w
@@ -71,6 +72,7 @@ prepareGUI = do
                                            , tokenArray  = nothingRef'
                                            , selectedTkn = nothingRef''
                                            , xmlDocument = nothingRef'''
+                                           , errorModel  = listRef
                                            , currentFocs = somethingRef
                                            , trigger     = nothingRef''''
                                            }
@@ -108,7 +110,9 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       openItem `afterActivateLeaf` openItemHandler gui
                       clearBtn `onClicked` clearBtnHandler gui
                       errorView <- xmlGetWidget (xml gui) castToTreeView "errorView"
+                      listView <- xmlGetWidget (xml gui) castToTreeView "treeView1"
                       (initTreeView errorView) =<< errorStore
+                      (initListView listView) =<< (readIORef (errorModel gui))
                       recordBtn <- xmlGetWidget (xml gui) castToButton "recordButton"
                       recordBtn `onClicked` recordHandler gui errorView
                       (triggerBtn gui) `afterToggled` triggerToggleHandler gui
@@ -124,6 +128,38 @@ initTreeView view model =  do
                         cellLayoutSetAttributes column renderer model $ \row -> [cellText := name row]
                         view `treeViewAppendColumn` column
                         return ()
+
+initListView :: TreeView -> ListStore Record -> IO ()
+initListView view model = do
+    view `treeViewSetModel` model
+    view `treeViewSetHeadersVisible` True
+    
+    columnTokens <- treeViewColumnNew
+    rendererTokens <- cellRendererTextNew
+    treeViewColumnPackStart columnTokens rendererTokens True
+    cellLayoutSetAttributes columnTokens rendererTokens model $ \row -> [cellText := record2tokens row ]
+    treeViewColumnSetTitle columnTokens "Error Tokens"
+    view `treeViewAppendColumn` columnTokens
+    
+    columnTrigger <- treeViewColumnNew
+    rendererTrigger <- cellRendererTextNew
+    treeViewColumnPackStart columnTrigger rendererTrigger True
+    cellLayoutSetAttributes columnTrigger rendererTrigger model $ \row -> [cellText := record2trigger row ]
+    treeViewColumnSetTitle columnTrigger "Trigger"
+    view `treeViewAppendColumn` columnTrigger
+    
+    columnType <- treeViewColumnNew
+    rendererType <- cellRendererTextNew
+    treeViewColumnPackStart columnType rendererType True
+    cellLayoutSetAttributes columnType rendererType model $ \row -> [cellText := record2type row ]
+    treeViewColumnSetTitle columnType "Type"
+    view `treeViewAppendColumn` columnType
+    
+    return ()
+
+record2tokens (Record _ (Errtoks errtoks) _ _ _) = errtoks
+record2trigger (Record (Record_Attrs context _) _ _ _ _) = show context
+record2type (Record _ _ etype _ _) = show etype
 
 -- Queries the user for opening a file.
 openFileAction :: Gui -> IO (Maybe FilePath)
