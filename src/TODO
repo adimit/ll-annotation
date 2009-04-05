@@ -2,3 +2,4 @@
 - GUI crashes on non-file input in CTRL-L widget in file chooser.
 - Use Unicode in GTK+ widgets.
 - Optimize creating and applying of tags.
+- add an import binding.
