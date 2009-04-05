@@ -46,8 +46,8 @@
 <!ELEMENT target (#PCDATA)>
 <!ELEMENT token (#PCDATA)>
 
-<!ATTLIST grammar econtext IDREFS #IMPLIED>
-<!ATTLIST error transfer (true) #IMPLIED>
+<!ATTLIST record econtext IDREFS #IMPLIED>
+<!ATTLIST record transfer (true) #IMPLIED>
 
 <!ATTLIST token idx ID #REQUIRED>
 <!ATTLIST errtoks idx IDREFS #REQUIRED>

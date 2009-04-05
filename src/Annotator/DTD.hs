@@ -14,32 +14,29 @@ data Tokens = Tokens Tokens_Attrs [Token]
 data Tokens_Attrs = Tokens_Attrs
     { tokensAmount :: String
     } deriving (Eq,Show)
-data Record = Record Errtoks Error (Maybe Target) (Maybe Comment)
+data Record = Record Record_Attrs Errtoks Error (Maybe Target)
+                     (Maybe Comment)
             deriving (Eq,Show)
+data Record_Attrs = Record_Attrs
+    { recordEcontext :: (Maybe String)
+    , recordTransfer :: (Maybe Record_transfer)
+    } deriving (Eq,Show)
+data Record_transfer = Record_transfer_true
+                     deriving (Eq,Show)
 data Errtoks = Errtoks
     { errtoksIdx :: String
     } deriving (Eq,Show)
-data Error = Error Error_Attrs (Maybe Error_)
-           deriving (Eq,Show)
-data Error_Attrs = Error_Attrs
-    { errorTransfer :: (Maybe Error_transfer)
-    } deriving (Eq,Show)
+newtype Error = Error (Maybe Error_) 		deriving (Eq,Show)
 data Error_ = Error_Context Context
             | Error_Grammar Grammar
             | Error_Spelling Spelling
             | Error_Gibberish Gibberish
             deriving (Eq,Show)
-data Error_transfer = Error_transfer_true
-                    deriving (Eq,Show)
 newtype Context = Context (Maybe Context_) 		deriving (Eq,Show)
 data Context_ = Context_Lexical Lexical
               | Context_Idiom Idiom
               deriving (Eq,Show)
-data Grammar = Grammar Grammar_Attrs (Maybe Grammar_)
-             deriving (Eq,Show)
-data Grammar_Attrs = Grammar_Attrs
-    { grammarEcontext :: (Maybe String)
-    } deriving (Eq,Show)
+newtype Grammar = Grammar (Maybe Grammar_) 		deriving (Eq,Show)
 data Grammar_ = Grammar_Agreement Agreement
               | Grammar_Omission Omission
               | Grammar_Wo Wo
@@ -153,15 +150,33 @@ instance XmlAttributes Tokens_Attrs where
 instance HTypeable Record where
     toHType x = Defined "record" [] []
 instance XmlContent Record where
-    toContents (Record a b c d) =
-        [CElem (Elem "record" [] (toContents a ++ toContents b ++
-                                  maybe [] toContents c ++ maybe [] toContents d)) ()]
+    toContents (Record as a b c d) =
+        [CElem (Elem "record" (toAttrs as) (toContents a ++ toContents b ++
+                                            maybe [] toContents c ++ maybe [] toContents d)) ()]
     parseContents = do
-        { e@(Elem _ [] _) <- element ["record"]
-        ; interior e $ return (Record) `apply` parseContents
+        { e@(Elem _ as _) <- element ["record"]
+        ; interior e $ return (Record (fromAttrs as)) `apply` parseContents
                        `apply` parseContents `apply` optional parseContents
                        `apply` optional parseContents
         } `adjustErr` ("in <record>, "++)
+instance XmlAttributes Record_Attrs where
+    fromAttrs as =
+        Record_Attrs
+          { recordEcontext = possibleA fromAttrToStr "econtext" as
+          , recordTransfer = possibleA fromAttrToTyp "transfer" as
+          }
+    toAttrs v = catMaybes 
+        [ maybeToAttr toAttrFrStr "econtext" (recordEcontext v)
+        , maybeToAttr toAttrFrTyp "transfer" (recordTransfer v)
+        ]
+
+instance XmlAttrType Record_transfer where
+    fromAttrToTyp n (n',v)
+        | n==n'     = translate (attr2str v)
+        | otherwise = Nothing
+      where translate "true" = Just Record_transfer_true
+            translate _ = Nothing
+    toAttrFrTyp n Record_transfer_true = Just (n, str2attr "true")
 
 instance HTypeable Errtoks where
     toHType x = Defined "errtoks" [] []
@@ -184,21 +199,12 @@ instance XmlAttributes Errtoks where
 instance HTypeable Error where
     toHType x = Defined "error" [] []
 instance XmlContent Error where
-    toContents (Error as a) =
-        [CElem (Elem "error" (toAttrs as) (maybe [] toContents a)) ()]
+    toContents (Error a) =
+        [CElem (Elem "error" [] (maybe [] toContents a)) ()]
     parseContents = do
-        { e@(Elem _ as _) <- element ["error"]
-        ; interior e $ return (Error (fromAttrs as))
-                       `apply` optional parseContents
+        { e@(Elem _ [] _) <- element ["error"]
+        ; interior e $ return (Error) `apply` optional parseContents
         } `adjustErr` ("in <error>, "++)
-instance XmlAttributes Error_Attrs where
-    fromAttrs as =
-        Error_Attrs
-          { errorTransfer = possibleA fromAttrToTyp "transfer" as
-          }
-    toAttrs v = catMaybes 
-        [ maybeToAttr toAttrFrTyp "transfer" (errorTransfer v)
-        ]
 
 instance HTypeable Error_ where
     toHType x = Defined "error" [] []
@@ -213,14 +219,6 @@ instance XmlContent Error_ where
         , return (Error_Spelling) `apply` parseContents
         , return (Error_Gibberish) `apply` parseContents
         ] `adjustErr` ("in <error>, "++)
-
-instance XmlAttrType Error_transfer where
-    fromAttrToTyp n (n',v)
-        | n==n'     = translate (attr2str v)
-        | otherwise = Nothing
-      where translate "true" = Just Error_transfer_true
-            translate _ = Nothing
-    toAttrFrTyp n Error_transfer_true = Just (n, str2attr "true")
 
 instance HTypeable Context where
     toHType x = Defined "context" [] []
@@ -245,21 +243,12 @@ instance XmlContent Context_ where
 instance HTypeable Grammar where
     toHType x = Defined "grammar" [] []
 instance XmlContent Grammar where
-    toContents (Grammar as a) =
-        [CElem (Elem "grammar" (toAttrs as) (maybe [] toContents a)) ()]
+    toContents (Grammar a) =
+        [CElem (Elem "grammar" [] (maybe [] toContents a)) ()]
     parseContents = do
-        { e@(Elem _ as _) <- element ["grammar"]
-        ; interior e $ return (Grammar (fromAttrs as))
-                       `apply` optional parseContents
+        { e@(Elem _ [] _) <- element ["grammar"]
+        ; interior e $ return (Grammar) `apply` optional parseContents
         } `adjustErr` ("in <grammar>, "++)
-instance XmlAttributes Grammar_Attrs where
-    fromAttrs as =
-        Grammar_Attrs
-          { grammarEcontext = possibleA fromAttrToStr "econtext" as
-          }
-    toAttrs v = catMaybes 
-        [ maybeToAttr toAttrFrStr "econtext" (grammarEcontext v)
-        ]
 
 instance HTypeable Grammar_ where
     toHType x = Defined "grammar" [] []

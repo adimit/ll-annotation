@@ -109,7 +109,7 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       recordBtn `onClicked` recordHandler gui errorView
                       return ()
 
-initTreeView :: TreeView -> TreeStore EType -> IO ()
+initTreeView :: TreeView -> TreeStore (EType Error) -> IO ()
 initTreeView view model =  do
                         view `treeViewSetModel` model
                         view `treeViewSetHeadersVisible` False

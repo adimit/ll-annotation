@@ -16,31 +16,26 @@ recordHandler gui view =
     do tokens <- readIORef (selectedTkn gui)
        case tokens of
          [] -> putStrLn "Please select some tokens."
-         ts -> do Just iter <- (treeViewGetSelection view >>= treeSelectionGetSelected) 
-                  etypelist <- (\store -> recurseToParent (Just iter) store) =<< errorStore
-                  return ()
+         ts -> do paths <- treeSelectionGetSelectedRows =<< (treeViewGetSelection view)
+                  case paths of
+                    [path] -> do (EType _ etype) <- (\store ->treeStoreGetValue store path) =<< errorStore
+                                 record <- makeRecord etype ts
+                                 addToRecords gui record
+                                 return ()
+                    _ -> putStrLn "Warning: Select one error type first."
        
-       
-recurseToParent :: (Maybe TreeIter) -> TreeStore EType -> IO [EType]
-recurseToParent Nothing _ = return []
-recurseToParent (Just iter) store = 
-    do parent <- treeModelIterParent store iter 
-       etype <- (treeStoreGetValue store) =<< (store `treeModelGetPath` iter) 
-       recurseToParent parent store >>= \t -> return (etype:t)
-       
-foldElist :: [EType] -> Error
-foldElist ((ENode _ t nothing):es) = foldElist' (t nothing) es
-foldElist ((ELeaf _ t):es) = foldElist' t es
-foldElist _ = error "WTF?"
-
-foldElist' :: XmlContent a => a -> [EType] -> Error
-foldElist' = undefined
-
 addToRecords :: Gui -> Record -> IO ()
-addToRecords = undefined
+addToRecords gui err = do ref <- readIORef (xmlDocument gui)
+                          case ref of
+                              Nothing  -> putStrLn "Warning, empty document!"
+                              Just doc -> writeIORef (xmlDocument gui) (Just $ ate err doc) 
+                              where ate e c@(Corpus ts (Errors es)) = 
+                                                             if e `elem` es
+                                                                then c
+                                                                else Corpus ts (Errors (e:es))
 
-makeRecord :: Error -> IO Record
-makeRecord = undefined
+makeRecord :: Error -> [Token] -> IO Record
+makeRecord etype ts = return $ Record (Record_Attrs Nothing Nothing) (Errtoks $ unwords . (map tokenId) $ ts) etype Nothing Nothing
 
 clearBtnHandler :: Gui -> IO ()
 clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
