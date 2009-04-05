@@ -35,9 +35,13 @@ data Error_ = Error_Context Context
 newtype Context = Context (Maybe Context_) 		deriving (Eq,Show)
 data Context_ = Context_Lexical Lexical
               | Context_Idiom Idiom
+              | Context_Verbtense Verbtense
               deriving (Eq,Show)
 newtype Grammar = Grammar (Maybe Grammar_) 		deriving (Eq,Show)
 data Grammar_ = Grammar_Agreement Agreement
+              | Grammar_Voice Voice
+              | Grammar_Valency Valency
+              | Grammar_Complementation Complementation
               | Grammar_Omission Omission
               | Grammar_Wo Wo
               | Grammar_Morphology Morphology
@@ -74,6 +78,10 @@ data Morphology_ = Morphology_Derivation Derivation
                  | Morphology_Compounding Compounding
                  | Morphology_Inflection Inflection
                  deriving (Eq,Show)
+newtype Wo = Wo (Maybe Wo_) 		deriving (Eq,Show)
+data Wo_ = Wo_Internal Internal
+         | Wo_External External
+         deriving (Eq,Show)
 data Number = Number 		deriving (Eq,Show)
 data Gender = Gender 		deriving (Eq,Show)
 data Case = Case 		deriving (Eq,Show)
@@ -83,14 +91,19 @@ data Subject = Subject 		deriving (Eq,Show)
 data Predicate = Predicate 		deriving (Eq,Show)
 data Article = Article 		deriving (Eq,Show)
 data Preposition = Preposition 		deriving (Eq,Show)
-data Wo = Wo 		deriving (Eq,Show)
 data Redundancy = Redundancy 		deriving (Eq,Show)
 data Homonymy = Homonymy 		deriving (Eq,Show)
 data Register = Register 		deriving (Eq,Show)
+data External = External 		deriving (Eq,Show)
+data Internal = Internal 		deriving (Eq,Show)
 data Diacritics = Diacritics 		deriving (Eq,Show)
+data Verbtense = Verbtense 		deriving (Eq,Show)
 data Local = Local 		deriving (Eq,Show)
 data Lexis = Lexis 		deriving (Eq,Show)
 data Idiom = Idiom 		deriving (Eq,Show)
+data Voice = Voice 		deriving (Eq,Show)
+data Valency = Valency 		deriving (Eq,Show)
+data Complementation = Complementation 		deriving (Eq,Show)
 data Direct = Direct 		deriving (Eq,Show)
 data Indirect = Indirect 		deriving (Eq,Show)
 data Derivation = Derivation 		deriving (Eq,Show)
@@ -235,9 +248,11 @@ instance HTypeable Context_ where
 instance XmlContent Context_ where
     toContents (Context_Lexical a) = toContents a
     toContents (Context_Idiom a) = toContents a
+    toContents (Context_Verbtense a) = toContents a
     parseContents = oneOf
         [ return (Context_Lexical) `apply` parseContents
         , return (Context_Idiom) `apply` parseContents
+        , return (Context_Verbtense) `apply` parseContents
         ] `adjustErr` ("in <context>, "++)
 
 instance HTypeable Grammar where
@@ -254,12 +269,18 @@ instance HTypeable Grammar_ where
     toHType x = Defined "grammar" [] []
 instance XmlContent Grammar_ where
     toContents (Grammar_Agreement a) = toContents a
+    toContents (Grammar_Voice a) = toContents a
+    toContents (Grammar_Valency a) = toContents a
+    toContents (Grammar_Complementation a) = toContents a
     toContents (Grammar_Omission a) = toContents a
     toContents (Grammar_Wo a) = toContents a
     toContents (Grammar_Morphology a) = toContents a
     toContents (Grammar_Redundancy a) = toContents a
     parseContents = oneOf
         [ return (Grammar_Agreement) `apply` parseContents
+        , return (Grammar_Voice) `apply` parseContents
+        , return (Grammar_Valency) `apply` parseContents
+        , return (Grammar_Complementation) `apply` parseContents
         , return (Grammar_Omission) `apply` parseContents
         , return (Grammar_Wo) `apply` parseContents
         , return (Grammar_Morphology) `apply` parseContents
@@ -404,6 +425,26 @@ instance XmlContent Morphology_ where
         , return (Morphology_Inflection) `apply` parseContents
         ] `adjustErr` ("in <morphology>, "++)
 
+instance HTypeable Wo where
+    toHType x = Defined "wo" [] []
+instance XmlContent Wo where
+    toContents (Wo a) =
+        [CElem (Elem "wo" [] (maybe [] toContents a)) ()]
+    parseContents = do
+        { e@(Elem _ [] _) <- element ["wo"]
+        ; interior e $ return (Wo) `apply` optional parseContents
+        } `adjustErr` ("in <wo>, "++)
+
+instance HTypeable Wo_ where
+    toHType x = Defined "wo" [] []
+instance XmlContent Wo_ where
+    toContents (Wo_Internal a) = toContents a
+    toContents (Wo_External a) = toContents a
+    parseContents = oneOf
+        [ return (Wo_Internal) `apply` parseContents
+        , return (Wo_External) `apply` parseContents
+        ] `adjustErr` ("in <wo>, "++)
+
 instance HTypeable Number where
     toHType x = Defined "number" [] []
 instance XmlContent Number where
@@ -494,16 +535,6 @@ instance XmlContent Preposition where
         ; return Preposition
         } `adjustErr` ("in <preposition>, "++)
 
-instance HTypeable Wo where
-    toHType x = Defined "wo" [] []
-instance XmlContent Wo where
-    toContents Wo =
-        [CElem (Elem "wo" [] []) ()]
-    parseContents = do
-        { (Elem _ as []) <- element ["wo"]
-        ; return Wo
-        } `adjustErr` ("in <wo>, "++)
-
 instance HTypeable Redundancy where
     toHType x = Defined "redundancy" [] []
 instance XmlContent Redundancy where
@@ -534,6 +565,26 @@ instance XmlContent Register where
         ; return Register
         } `adjustErr` ("in <register>, "++)
 
+instance HTypeable External where
+    toHType x = Defined "external" [] []
+instance XmlContent External where
+    toContents External =
+        [CElem (Elem "external" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["external"]
+        ; return External
+        } `adjustErr` ("in <external>, "++)
+
+instance HTypeable Internal where
+    toHType x = Defined "internal" [] []
+instance XmlContent Internal where
+    toContents Internal =
+        [CElem (Elem "internal" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["internal"]
+        ; return Internal
+        } `adjustErr` ("in <internal>, "++)
+
 instance HTypeable Diacritics where
     toHType x = Defined "diacritics" [] []
 instance XmlContent Diacritics where
@@ -543,6 +594,16 @@ instance XmlContent Diacritics where
         { (Elem _ as []) <- element ["diacritics"]
         ; return Diacritics
         } `adjustErr` ("in <diacritics>, "++)
+
+instance HTypeable Verbtense where
+    toHType x = Defined "verbtense" [] []
+instance XmlContent Verbtense where
+    toContents Verbtense =
+        [CElem (Elem "verbtense" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["verbtense"]
+        ; return Verbtense
+        } `adjustErr` ("in <verbtense>, "++)
 
 instance HTypeable Local where
     toHType x = Defined "local" [] []
@@ -573,6 +634,36 @@ instance XmlContent Idiom where
         { (Elem _ as []) <- element ["idiom"]
         ; return Idiom
         } `adjustErr` ("in <idiom>, "++)
+
+instance HTypeable Voice where
+    toHType x = Defined "voice" [] []
+instance XmlContent Voice where
+    toContents Voice =
+        [CElem (Elem "voice" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["voice"]
+        ; return Voice
+        } `adjustErr` ("in <voice>, "++)
+
+instance HTypeable Valency where
+    toHType x = Defined "valency" [] []
+instance XmlContent Valency where
+    toContents Valency =
+        [CElem (Elem "valency" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["valency"]
+        ; return Valency
+        } `adjustErr` ("in <valency>, "++)
+
+instance HTypeable Complementation where
+    toHType x = Defined "complementation" [] []
+instance XmlContent Complementation where
+    toContents Complementation =
+        [CElem (Elem "complementation" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["complementation"]
+        ; return Complementation
+        } `adjustErr` ("in <complementation>, "++)
 
 instance HTypeable Direct where
     toHType x = Defined "direct" [] []

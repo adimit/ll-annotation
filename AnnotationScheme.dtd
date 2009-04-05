@@ -7,8 +7,8 @@
 <!ELEMENT errtoks EMPTY>
 <!ELEMENT error (context|grammar|spelling|gibberish)?>
 
-<!ELEMENT context (lexical|idiom)?>
-<!ELEMENT grammar (agreement|omission|wo|morphology|redundancy)?>
+<!ELEMENT context (lexical|idiom|verbtense)?>
+<!ELEMENT grammar (agreement|voice|valency|complementation|omission|wo|morphology|redundancy)?>
 <!ELEMENT spelling (homonymy|register|diacritics|local)?>
 <!ELEMENT gibberish EMPTY>
 
@@ -17,6 +17,7 @@
 <!ELEMENT omission (subject|predicate|object|article|preposition)?>
 <!ELEMENT object (direct|indirect)? >
 <!ELEMENT morphology (derivation|compounding|inflection)? >
+<!ELEMENT wo (internal|external)? >
 
 <!ELEMENT number EMPTY >
 <!ELEMENT gender EMPTY >
@@ -27,14 +28,19 @@
 <!ELEMENT predicate EMPTY >
 <!ELEMENT article EMPTY >
 <!ELEMENT preposition EMPTY >
-<!ELEMENT wo EMPTY >
 <!ELEMENT redundancy EMPTY >
 <!ELEMENT homonymy EMPTY >
 <!ELEMENT register EMPTY >
+<!ELEMENT external EMPTY >
+<!ELEMENT internal EMPTY >
 <!ELEMENT diacritics EMPTY >
+<!ELEMENT verbtense EMPTY >
 <!ELEMENT local EMPTY >
 <!ELEMENT lexis EMPTY >
 <!ELEMENT idiom EMPTY >
+<!ELEMENT voice EMPTY >
+<!ELEMENT valency EMPTY >
+<!ELEMENT complementation EMPTY >
 <!ELEMENT direct EMPTY >
 <!ELEMENT indirect EMPTY >
 <!ELEMENT derivation EMPTY >

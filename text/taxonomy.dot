@@ -15,6 +15,12 @@ digraph Taxonomy {
 		Grammar -> Redundancy;
 		Grammar -> Morphology;
 		Grammar -> "Word Order";
+		Grammar -> Voice;
+		Grammar -> Valency;
+		Grammar -> Complementation;
+
+		"Word Order" -> Internal;
+		"Word Order" -> External;
 
 		Agreement -> Number;
 		Agreement -> Gender;
@@ -44,6 +50,7 @@ digraph Taxonomy {
 		label = Context;
 		Context -> Lexis;
 		Context -> Idiom;
+		Context -> "Verb Tense";
 		color = black;
 	}
 
