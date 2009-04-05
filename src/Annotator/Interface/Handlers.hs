@@ -4,11 +4,22 @@ import Annotator.Interface.Types
 import Annotator.Interface.Util
 import Annotator.Interface.Models
 import Annotator.DTD
+import Control.Monad (forM_)
 import Data.IORef
 import Data.List
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
 import qualified Graphics.UI.Gtk.Gdk.Events as Old
+
+deleteHandler :: Gui -> TreeView -> IO ()
+deleteHandler gui view = do
+    rows <- treeSelectionGetSelectedRows =<< (treeViewGetSelection view)
+    forM_ rows (deleteThisRecord gui)
+
+deleteThisRecord :: Gui -> TreePath -> IO ()
+deleteThisRecord gui [index] = do model <- readIORef (errorModel gui)
+                                  model `listStoreRemove` index
+deleteThisRecord _ _ = putStrLn "Panic! We got a tree path and wanted a list index"
 
 recordHandler :: Gui -> TreeView -> IO ()
 recordHandler gui view = 
@@ -19,21 +30,9 @@ recordHandler gui view =
                  case paths of
                    [path] -> do (EType _ etype) <- (\store ->treeStoreGetValue store path) =<< errorStore
                                 record <- makeRecord gui etype
-                                addToRecords gui record
-                                clearBtnHandler gui
+                                addToErrorView gui record
                    _ -> putStrLn "Warning: Select one error type first."
        
-addToRecords :: Gui -> Record -> IO ()
-addToRecords gui err = do ref <- readIORef (xmlDocument gui)
-                          case ref of
-                              Nothing  -> putStrLn "Warning, empty document!"
-                              Just doc -> do writeIORef (xmlDocument gui) (Just $ ate err doc) 
-                                             addToErrorView gui err
-                              where ate e c@(Corpus ts (Errors es)) = 
-                                                             if e `elem` es
-                                                                then c
-                                                                else Corpus ts (Errors (e:es))
-
 addToErrorView :: Gui -> Record -> IO ()
 addToErrorView gui record =  
         (\model -> model `listStorePrepend` record) =<< (readIORef (errorModel gui))

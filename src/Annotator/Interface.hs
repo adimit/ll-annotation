@@ -109,11 +109,13 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       quitItem `afterActivateLeaf` widgetDestroy (window gui)
                       openItem `afterActivateLeaf` openItemHandler gui
                       clearBtn `onClicked` clearBtnHandler gui
+                      deleteBtn <- xmlGetWidget (xml gui) castToButton "deleteButton"
                       errorView <- xmlGetWidget (xml gui) castToTreeView "errorView"
                       listView <- xmlGetWidget (xml gui) castToTreeView "treeView1"
                       (initTreeView errorView) =<< errorStore
                       (initListView listView) =<< (readIORef (errorModel gui))
                       recordBtn <- xmlGetWidget (xml gui) castToButton "recordButton"
+                      deleteBtn `onClicked` deleteHandler gui listView
                       recordBtn `onClicked` recordHandler gui errorView
                       (triggerBtn gui) `afterToggled` triggerToggleHandler gui
                       return ()
@@ -178,9 +180,10 @@ openItemHandler gui = do fn <- openFileAction gui
                               _          -> return ()
 
 saveItemHandler :: Gui -> FilePath -> IO ()
-saveItemHandler gui fn = do ref <- readIORef (xmlDocument gui)
+saveItemHandler gui fn = do errors <- listStoreToList =<< (readIORef $ errorModel gui)
+                            ref <- readIORef (xmlDocument gui)
                             case ref of
-                                 Just doc -> fWriteXml fn doc
+                                 Just (Corpus ts _) -> fWriteXml fn (Corpus ts (Errors errors))
                                  Nothing  -> showError "Load a file first"
 
 saveAsItemHandler :: Gui -> IO ()
