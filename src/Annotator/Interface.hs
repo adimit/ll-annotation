@@ -135,21 +135,21 @@ initListView :: Array Int Token -> TreeView -> ListStore Record -> IO ()
 initListView tokens view model = do
     view `treeViewSetModel` model
     view `treeViewSetHeadersVisible` True
-    
+
     columnTokens <- treeViewColumnNew
     rendererTokens <- cellRendererTextNew
     treeViewColumnPackStart columnTokens rendererTokens True
     cellLayoutSetAttributes columnTokens rendererTokens model $ \row -> [cellText := record2tokens row tokens ]
     treeViewColumnSetTitle columnTokens "Error Tokens"
     view `treeViewAppendColumn` columnTokens
-    
+
     columnTrigger <- treeViewColumnNew
     rendererTrigger <- cellRendererTextNew
     treeViewColumnPackStart columnTrigger rendererTrigger True
     cellLayoutSetAttributes columnTrigger rendererTrigger model $ \row -> [cellText := record2trigger row tokens ]
     treeViewColumnSetTitle columnTrigger "Trigger"
     view `treeViewAppendColumn` columnTrigger
-    
+
     columnIndex <- treeViewColumnNew
     rendererIndex <- cellRendererTextNew
     treeViewColumnPackStart columnIndex rendererIndex True
@@ -166,13 +166,13 @@ initListView tokens view model = do
 
     return ()
 
-record2tokens (Record _ (Errtoks errtoks) _ _ _) tokens = 
+record2tokens (Record _ (Errtoks errtoks) _ _ _) tokens =
         show $ map (tokenString . (tokens!) . read . drop 1) (words errtoks)
 record2index (Record _ (Errtoks errtoks) _ _ _) = drop 1 $ head $ words errtoks
 record2trigger (Record (Record_Attrs Nothing _) _ _ _ _) tokens = "N/A"
 record2trigger (Record (Record_Attrs (Just context) _) _ _ _ _) tokens = 
         show $ map (tokenString . (tokens!) . read . drop 1) (words context)
-record2type (Record _ _ etype _ _) = show etype
+record2type (Record _ _ etype _ _) = show $ shortenErrorType etype
 
 lookupIndices array = map (tokenString . (array!))
 
