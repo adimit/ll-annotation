@@ -5,16 +5,17 @@
 <!ATTLIST tokens amount CDATA #REQUIRED >
 <!ELEMENT record (errtoks, error, target?, comment?) >
 <!ELEMENT errtoks EMPTY>
-<!ELEMENT error (context|grammar|spelling|gibberish)?>
+<!ELEMENT error (context|grammar|spelling)?>
 
-<!ELEMENT context (lexical|idiom|verbtense)?>
-<!ELEMENT grammar (agreement|voice|valency|complementation|omission|wo|morphology|redundancy)?>
+<!ELEMENT context (semantics|idiom|verbtense|redundancy)?>
+<!ELEMENT grammar (agreement|voice|collocation|countability|wrong|omitted|wo|morphology|redundancy)?>
 <!ELEMENT spelling (homonymy|register|diacritics|local)?>
 <!ELEMENT gibberish EMPTY>
 
 <!ELEMENT lexical EMPTY>
 <!ELEMENT agreement (number|gender|case|person|tense)?>
-<!ELEMENT omission (subject|predicate|object|article|preposition)?>
+<!ELEMENT omitted (subject|predicate|object|noun|conjunction|preposition|pronoun|determiner|adjective|verb)?>
+<!ELEMENT wrong (noun|conjunction|preposition|pronoun|determiner|adjective|verb)?>
 <!ELEMENT object (direct|indirect)? >
 <!ELEMENT morphology (derivation|compounding|inflection)? >
 <!ELEMENT wo (internal|external)? >
@@ -26,21 +27,26 @@
 <!ELEMENT person EMPTY >
 <!ELEMENT subject EMPTY >
 <!ELEMENT predicate EMPTY >
-<!ELEMENT article EMPTY >
 <!ELEMENT preposition EMPTY >
+<!ELEMENT pronoun EMPTY >
+<!ELEMENT noun EMPTY >
 <!ELEMENT redundancy EMPTY >
+<!ELEMENT conjunction EMPTY >
+<!ELEMENT determiner EMPTY >
 <!ELEMENT homonymy EMPTY >
 <!ELEMENT register EMPTY >
 <!ELEMENT external EMPTY >
 <!ELEMENT internal EMPTY >
+<!ELEMENT adjective EMPTY >
+<!ELEMENT semantics EMPTY >
+<!ELEMENT verb EMPTY >
 <!ELEMENT diacritics EMPTY >
+<!ELEMENT collocation EMPTY >
+<!ELEMENT countability EMPTY >
 <!ELEMENT verbtense EMPTY >
 <!ELEMENT local EMPTY >
-<!ELEMENT lexis EMPTY >
 <!ELEMENT idiom EMPTY >
 <!ELEMENT voice EMPTY >
-<!ELEMENT valency EMPTY >
-<!ELEMENT complementation EMPTY >
 <!ELEMENT direct EMPTY >
 <!ELEMENT indirect EMPTY >
 <!ELEMENT derivation EMPTY >

@@ -8,16 +8,34 @@ digraph Taxonomy {
 		Spelling -> "Local Variation";
 	}
 
+
 	subgraph cluster_1 {
 		label = Grammar;
 		Grammar -> Agreement;
-		Grammar -> Omission;
-		Grammar -> Redundancy;
 		Grammar -> Morphology;
 		Grammar -> "Word Order";
 		Grammar -> Voice;
-		Grammar -> Valency;
-		Grammar -> Complementation;
+		Grammar -> Countability;
+		Grammar -> Collocation;
+
+		Grammar -> Ommitted;
+		Grammar -> "Wrong";
+
+		subgraph cluster_3 {
+			color = black;
+			label = "Part of Speech";
+			Noun;
+			Verb;
+			Adjective;
+			Determiner;
+			Pronoun;
+			Preposition;
+			Conjunction;
+		}
+
+		Morphology -> Derivation;
+		Morphology -> Compounding;
+		Morphology -> Inflection;
 
 		"Word Order" -> Internal;
 		"Word Order" -> External;
@@ -28,43 +46,50 @@ digraph Taxonomy {
 		Agreement -> Person;
 		Agreement -> Tense;
 
-		Omission -> Subject;
-		Omission -> Predicate;
-		Omission -> Object;
-		Omission -> Article;
-		Omission -> Preposition;
+		Ommitted -> Subject;
+		Ommitted -> Predicate;
+		Ommitted -> Object;
+		Ommitted -> Noun;
+		Ommitted -> Verb;
+		Ommitted -> Adjective;
+		Ommitted -> Determiner;
+		Ommitted -> Pronoun;
+		Ommitted -> Preposition;
+		Ommitted -> Conjunction;
+
 		Object -> Direct;
 		Object -> Indirect;
 
-		Morphology -> Derivation;
-		Morphology -> Compounding;
-		Morphology -> Inflection;
+
+		"Wrong" -> Noun;
+		"Wrong" -> Verb;
+		"Wrong" -> Adjective;
+		"Wrong" -> Determiner;
+		"Wrong" -> Pronoun;
+		"Wrong" -> Preposition;
+		"Wrong" -> Conjunction;
+
 
 		color = black;
 
 		node [style=filled, color=lightgrey]
-		"Error Context";
 	}
 
 	subgraph cluster_2 {
 		label = Context;
-		Context -> Lexis;
+		Context -> Semantics;
 		Context -> Idiom;
 		Context -> "Verb Tense";
-		color = black;
-	}
+		Context -> Redundancy;
 
-	subgraph cluster_3 {
-		label = Gibberish
-		Gibberish;
 		color = black;
 	}
 
 	Error -> Spelling;
 	Error -> Grammar;
 	Error -> Context;
-	Error -> Gibberish;
 
 	node [style=filled, color=lightgrey]
+	"Error Context";
 	Transfer;
 }
