@@ -58,6 +58,7 @@ truncateIfEqual :: XmlContent a => String -> String -> (String -> a) -> Maybe a
 truncateIfEqual s s' f | s == s'   = Nothing
                        | otherwise = Just $ f s
 
+highlightTags :: Gui -> [String] -> IO ()
 highlightTags gui tokens = do
         buffer <- textViewGetBuffer (corpusView gui)
         table <- textBufferGetTagTable buffer
