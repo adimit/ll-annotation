@@ -24,6 +24,7 @@ import Annotator.Interface.Types
 import Control.Monad (forM,forM_)
 import Control.Monad.Trans (liftIO)
 import Data.IORef
+import Data.List (sort)
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.EventM
@@ -175,11 +176,13 @@ initColumn model view f name = do
         view `treeViewAppendColumn` column
 
 record2tokens tokens (Record _ (Errtoks errtoks) _ _ _) =
-        show $ map (tokenString . (tokens!) . read . drop 1) (words errtoks)
+        let sorted = sort $ map (read . drop 1) (words errtoks)
+        in  show $ map (tokenString . (tokens!)) sorted
 record2index (Record _ (Errtoks errtoks) _ _ _) = drop 1 $ head $ words errtoks
 record2trigger tokens (Record (Record_Attrs Nothing _) _ _ _ _) = "N/A"
 record2trigger tokens (Record (Record_Attrs (Just context) _) _ _ _ _) = 
-        show $ map (tokenString . (tokens!) . read . drop 1) (words context)
+        let sorted = sort $ map (read . drop 1) (words context)
+        in  show $ map (tokenString . (tokens!)) sorted
 record2type (Record _ _ etype _ _) = show $ shortenErrorType etype
 record2target (Record _ _ _ Nothing _) = ""
 record2target (Record _ _ _ (Just (Target s)) _) = s
