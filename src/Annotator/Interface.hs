@@ -22,9 +22,11 @@ import Annotator.Interface.Handlers
 import Annotator.Interface.Util
 import Annotator.Interface.Types
 import Control.Monad (forM,forM_)
+import Control.Monad.Trans (liftIO)
 import Data.IORef
 import GHC.List hiding (span)
 import Graphics.UI.Gtk
+import Graphics.UI.Gtk.Gdk.EventM
 import Graphics.UI.Gtk.Glade
 import Graphics.UI.Gtk.Windows.Dialog
 import Text.XML.HaXml.XmlContent.Haskell (readXml)
@@ -118,7 +120,26 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       deleteBtn `onClicked` deleteHandler gui listView
                       recordBtn `onClicked` recordHandler gui errorView
                       (triggerBtn gui) `afterToggled` triggerToggleHandler gui
+                      targetField <- xmlGetWidget (xml gui) castToEntry "targetField"
+                      commentField <- xmlGetWidget (xml gui) castToEntry "commentField"
+                      targetField `on` focusInEvent $ deleteField "Target Hypothesis" targetField
+                      commentField `on` focusInEvent $ deleteField "Comment" commentField
+                      targetField `on` focusOutEvent $ restoreField "Target Hypothesis" targetField
+                      commentField `on` focusOutEvent $ restoreField "Comment" commentField
                       return ()
+
+deleteField :: String -> Entry -> EventM EFocus Bool
+deleteField s e = liftIO $ do text <- entryGetText e
+                              if text == s
+                                 then e `entrySetText` "" >> return False
+                                 else return False
+
+restoreField :: String -> Entry -> EventM EFocus Bool
+restoreField s e = liftIO $ do text <- entryGetText e
+                               if text == ""
+                                  then e `entrySetText` s >> return False
+                                  else return False
+
 
 initTreeView :: TreeView -> TreeStore (EType Error) -> IO ()
 initTreeView view model =  do
@@ -136,43 +157,34 @@ initListView tokens view model = do
     view `treeViewSetModel` model
     view `treeViewSetHeadersVisible` True
 
-    columnTokens <- treeViewColumnNew
-    rendererTokens <- cellRendererTextNew
-    treeViewColumnPackStart columnTokens rendererTokens True
-    cellLayoutSetAttributes columnTokens rendererTokens model $ \row -> [cellText := record2tokens row tokens ]
-    treeViewColumnSetTitle columnTokens "Error Tokens"
-    view `treeViewAppendColumn` columnTokens
-
-    columnTrigger <- treeViewColumnNew
-    rendererTrigger <- cellRendererTextNew
-    treeViewColumnPackStart columnTrigger rendererTrigger True
-    cellLayoutSetAttributes columnTrigger rendererTrigger model $ \row -> [cellText := record2trigger row tokens ]
-    treeViewColumnSetTitle columnTrigger "Trigger"
-    view `treeViewAppendColumn` columnTrigger
-
-    columnIndex <- treeViewColumnNew
-    rendererIndex <- cellRendererTextNew
-    treeViewColumnPackStart columnIndex rendererIndex True
-    cellLayoutSetAttributes columnIndex rendererIndex model $ \row -> [cellText := record2index row ]
-    treeViewColumnSetTitle columnIndex "Index"
-    view `treeViewAppendColumn` columnIndex
-
-    columnType <- treeViewColumnNew
-    rendererType <- cellRendererTextNew
-    treeViewColumnPackStart columnType rendererType True
-    cellLayoutSetAttributes columnType rendererType model $ \row -> [cellText := record2type row ]
-    treeViewColumnSetTitle columnType "Type"
-    view `treeViewAppendColumn` columnType
+    initColumn model view (record2tokens tokens)"Tokens"
+    initColumn model view (record2trigger tokens) "Trigger"
+    initColumn model view record2index "Index"
+    initColumn model view record2target "Target"
+    initColumn model view record2type "Type"
+    initColumn model view record2comment "Comment"
 
     return ()
 
-record2tokens (Record _ (Errtoks errtoks) _ _ _) tokens =
+initColumn model view f name = do
+        column <- treeViewColumnNew
+        renderer <- cellRendererTextNew
+        treeViewColumnPackStart column renderer True
+        cellLayoutSetAttributes column renderer model $ \row -> [cellText := f row ]
+        treeViewColumnSetTitle column name
+        view `treeViewAppendColumn` column
+
+record2tokens tokens (Record _ (Errtoks errtoks) _ _ _) =
         show $ map (tokenString . (tokens!) . read . drop 1) (words errtoks)
 record2index (Record _ (Errtoks errtoks) _ _ _) = drop 1 $ head $ words errtoks
-record2trigger (Record (Record_Attrs Nothing _) _ _ _ _) tokens = "N/A"
-record2trigger (Record (Record_Attrs (Just context) _) _ _ _ _) tokens = 
+record2trigger tokens (Record (Record_Attrs Nothing _) _ _ _ _) = "N/A"
+record2trigger tokens (Record (Record_Attrs (Just context) _) _ _ _ _) = 
         show $ map (tokenString . (tokens!) . read . drop 1) (words context)
 record2type (Record _ _ etype _ _) = show $ shortenErrorType etype
+record2target (Record _ _ _ Nothing _) = ""
+record2target (Record _ _ _ (Just (Target s)) _) = s
+record2comment (Record _ _ _ _ Nothing) = ""
+record2comment (Record _ _ _ _ (Just (Comment s))) = s
 
 lookupIndices array = map (tokenString . (array!))
 

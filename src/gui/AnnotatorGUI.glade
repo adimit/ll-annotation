@@ -241,6 +241,44 @@
                       </packing>
                     </child>
                     <child>
+                      <widget class="GtkVBox" id="vbox3">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <widget class="GtkEntry" id="targetField">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">&#x2022;</property>
+                            <property name="text" translatable="yes">Target Hypothesis</property>
+                            <property name="primary_icon_stock">gtk-jump-to</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkEntry" id="commentField">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">&#x2022;</property>
+                            <property name="text" translatable="yes">Comment</property>
+                            <property name="primary_icon_stock">gtk-justify-left</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="padding">2</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="padding">2</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
                       <widget class="GtkButton" id="recordButton">
                         <property name="label" translatable="yes">gtk-media-record</property>
                         <property name="visible">True</property>
@@ -251,7 +289,7 @@
                       <packing>
                         <property name="expand">False</property>
                         <property name="padding">2</property>
-                        <property name="position">2</property>
+                        <property name="position">3</property>
                       </packing>
                     </child>
                   </widget>

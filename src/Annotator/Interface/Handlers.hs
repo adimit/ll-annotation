@@ -12,6 +12,7 @@ import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Glade
 import qualified Graphics.UI.Gtk.Gdk.Events as Old
 import System.Glib.Attributes
+import Text.XML.HaXml.XmlContent (XmlContent)
 
 deleteHandler :: Gui -> TreeView -> IO ()
 deleteHandler gui view = do
@@ -44,7 +45,18 @@ addToErrorView gui record@(Record _ (Errtoks tokens) _ _ _) = do
 makeRecord :: Gui -> Error -> IO Record
 makeRecord gui etype = do triggers <- readIORef (trigger gui)
                           tokens  <- readIORef (selectedTkn gui)
-                          return $ Record (Record_Attrs (Just $ token2string triggers) Nothing) (Errtoks $ token2string tokens) etype Nothing Nothing
+                          target <- entryGetText =<< (xmlGetWidget (xml gui) castToEntry "targetField")
+                          comment <- entryGetText =<< (xmlGetWidget (xml gui) castToEntry "commentField")
+                          return $ Record
+                                    (Record_Attrs (Just $ token2string triggers) Nothing)
+                                    (Errtoks $ token2string tokens)
+                                    etype
+                                    (target `truncateIfEqual` "Target Hypothesis" $ Target)
+                                    (comment `truncateIfEqual` "Comment" $ Comment)
+
+truncateIfEqual :: XmlContent a => String -> String -> (String -> a) -> Maybe a
+truncateIfEqual s s' f | s == s'   = Nothing
+                       | otherwise = Just $ f s
 
 highlightTags gui tokens = do
         buffer <- textViewGetBuffer (corpusView gui)
