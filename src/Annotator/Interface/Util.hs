@@ -17,13 +17,19 @@ import Text.XML.HaXml.XmlContent.Haskell (readXml)
 
 import Data.Array
 
+
+shortenErrorType :: Error ->[String]
+shortenErrorType = (filter isIrrelevant) . words . (filter $ not.isParen) . show
+        where isIrrelevant s = not.or $ map (flip isInfixOf $ s) [ "Nothing", "_", "Just" ]
+              isParen '(' = True
+              isParen ')' = True
+              isParen _ = False
+
 putTokensOnLabels :: Gui -> IO ()
 putTokensOnLabels gui = do tkns <- readIORef (selectedTkn gui)
                            trigs <- readIORef (trigger gui)
                            (tokenLabel gui) `labelSetText` (show $ map tokenString (sort tkns))
                            (triggerBtn gui) `buttonSetLabel` (show $ map tokenString (sort trigs))
-                           
-                           
 
 tokenId :: Token -> String
 tokenId (Token (Token_Attrs idx) _) = idx
