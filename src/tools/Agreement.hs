@@ -1,6 +1,7 @@
 module Main where
 
 import Annotator.DTD
+import Annotator.Interface.Util
 import Control.Monad
 import Data.Either
 import Data.List
@@ -11,11 +12,11 @@ import Text.XML.HaXml.XmlContent.Haskell (readXml)
 data ComparedRecords = ComparedRecords { agreement    :: [RecordPair]
                                        , disagreement :: ([Record],[Record]) }
 data RecordPair = RecordPair Record Record
-    
+
 main :: IO ()
 main = do args <- getArgs
           case args of
-              
+
               files@(_:_:_) -> do parses <- forM files (\f -> fmap readXml (readFile f))
                                   case lefts parses of
                                        [] -> compareCorpora $ rights parses
@@ -38,7 +39,15 @@ compareErrors2 es1 es2 = let ses1 = sortBy tokenEquality es1
                          in trawlErrors ses1 ses2 (ComparedRecords [] ([],[]))
 
 trawlErrors :: [Record] -> [Record] -> ComparedRecords -> ComparedRecords
-trawlErrors = undefined
+trawlErrors [] _ c = c
+trawlErrors _ [] c = c
+trawlErrors (r1@(Record _ (Errtoks t1) _ _ _):rs1)
+            (r2@(Record _ (Errtoks t2) _ _ _):rs2)
+            (ComparedRecords agree disagree@(lrds,rrds))
+            | t1 == t2  = trawlErrors rs1 rs2
+                                      (ComparedRecords ((RecordPair r1 r2):agree) disagree)
+            | otherwise = trawlErrors rs1 rs2
+                                      (ComparedRecords agree ((r1:lrds),(r2:rrds)))
 
 tokenEquality :: Record -> Record -> Ordering
 tokenEquality (Record _ (Errtoks t1) _ _ _) (Record _ (Errtoks t2) _ _ _) = compare t1 t2
