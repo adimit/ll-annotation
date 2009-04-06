@@ -32,3 +32,11 @@ executable text2corpus
     ghc-options: -Wall -O2
     ghc-prof-options: -prof -auto-all
     build-depends: base, HaXml >= 1.19, bytestring, pretty
+
+executable agreement
+    hs-source-dirs: src/tools, src
+    main-is: Agreement.hs
+    other-modules: Annotator.DTD
+    ghc-options: -Wall -O2
+    ghc-prof-options: -prof -auto-all
+    build-depends: base, HaXml >= 1.19
