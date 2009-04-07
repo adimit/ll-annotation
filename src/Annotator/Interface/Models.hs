@@ -36,6 +36,7 @@ errorStore = treeStoreNew
         , leafNode $ EType "Countability"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Countability Countability))))
         , leafNode $ EType "Collocation"     (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Collocation Collocation))))
         , leafNode $ EType "Voice"           (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Voice Voice))))
+        , leafNode $ EType "Verb Tense"      (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Verbtense Verbtense))))
         , Tree.Node (EType "Word Order"      (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wo (Wo Nothing))))))
           [ leafNode $ EType "Internal"      (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wo (Wo (Just $ Wo_Internal Internal))))))
           , leafNode $ EType "External"      (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wo (Wo (Just $ Wo_External External))))))
@@ -50,6 +51,7 @@ errorStore = treeStoreNew
           , leafNode $ EType "Predicate"     (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Predicate Predicate))))))
           , leafNode $ EType "Determiner"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Determiner Determiner))))))
           , leafNode $ EType "Pronoun"       (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Pronoun Pronoun))))))
+          , leafNode $ EType "Adverb"        (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Adverb Adverb))))))
           , leafNode $ EType "Preposition"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Preposition Preposition))))))
           , leafNode $ EType "Noun"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Noun Noun))))))
           , leafNode $ EType "Conjunction"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Conjunction Conjunction))))))
@@ -60,14 +62,15 @@ errorStore = treeStoreNew
             , leafNode $ EType "indirect"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Object (Object (Just $ Object_Indirect Indirect))))))))
             ]
           ]
-        , Tree.Node (EType "Wrong"           (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong Nothing))))))
-          [ leafNode $ EType "Determiner"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong (Just $ Wrong_Determiner Determiner))))))
-          , leafNode $ EType "Pronoun"       (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong (Just $ Wrong_Pronoun Pronoun))))))
-          , leafNode $ EType "Preposition"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong (Just $ Wrong_Preposition Preposition))))))
-          , leafNode $ EType "Noun"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong (Just $ Wrong_Noun Noun))))))
-          , leafNode $ EType "Conjunction"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong (Just $ Wrong_Conjunction Conjunction))))))
-          , leafNode $ EType "Adjective"     (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong (Just $ Wrong_Adjective Adjective))))))
-          , leafNode $ EType "Verb"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Wrong (Wrong (Just $ Wrong_Verb Verb))))))
+        , Tree.Node (EType "Replace"         (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace Nothing))))))
+          [ leafNode $ EType "Determiner"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Determiner Determiner))))))
+          , leafNode $ EType "Pronoun"       (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Pronoun Pronoun))))))
+          , leafNode $ EType "Adverb"        (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Adverb Adverb))))))
+          , leafNode $ EType "Preposition"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Preposition Preposition))))))
+          , leafNode $ EType "Noun"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Noun Noun))))))
+          , leafNode $ EType "Conjunction"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Conjunction Conjunction))))))
+          , leafNode $ EType "Adjective"     (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Adjective Adjective))))))
+          , leafNode $ EType "Verb"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Verb Verb))))))
           ]
         ]
       , Tree.Node (EType "Context" (Error  (Just $ Error_Context (Context  Nothing))))
@@ -75,6 +78,32 @@ errorStore = treeStoreNew
         , leafNode $ EType "Idiom" (Error  (Just $ Error_Context (Context  (Just $ Context_Idiom Idiom))))
         , leafNode $ EType "Verb tense" (Error  (Just $ Error_Context (Context  (Just $ Context_Verbtense Verbtense))))
         , leafNode $ EType "Redundancy" (Error  (Just $ Error_Context (Context  (Just $ Context_Redundancy Redundancy))))
+        , Tree.Node (EType "Omitted"         (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted Nothing))))))
+          [ leafNode $ EType "Subject"       (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Subject Subject))))))
+          , leafNode $ EType "Predicate"     (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Predicate Predicate))))))
+          , leafNode $ EType "Determiner"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Determiner Determiner))))))
+          , leafNode $ EType "Pronoun"       (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Pronoun Pronoun))))))
+          , leafNode $ EType "Adverb"        (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Adverb Adverb))))))
+          , leafNode $ EType "Preposition"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Preposition Preposition))))))
+          , leafNode $ EType "Noun"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Noun Noun))))))
+          , leafNode $ EType "Conjunction"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Conjunction Conjunction))))))
+          , leafNode $ EType "Adjective"     (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Adjective Adjective))))))
+          , leafNode $ EType "Verb"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Verb Verb))))))
+          , Tree.Node (EType "Object"        (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Object (Object Nothing))))))))
+            [ leafNode $ EType "direct"      (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Object (Object (Just $ Object_Direct Direct))))))))
+            , leafNode $ EType "indirect"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Omitted (Omitted (Just $ Omitted_Object (Object (Just $ Object_Indirect Indirect))))))))
+            ]
+          ]
+        , Tree.Node (EType "Replace"         (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace Nothing))))))
+          [ leafNode $ EType "Determiner"    (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Determiner Determiner))))))
+          , leafNode $ EType "Pronoun"       (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Pronoun Pronoun))))))
+          , leafNode $ EType "Adverb"        (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Adverb Adverb))))))
+          , leafNode $ EType "Preposition"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Preposition Preposition))))))
+          , leafNode $ EType "Noun"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Noun Noun))))))
+          , leafNode $ EType "Conjunction"   (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Conjunction Conjunction))))))
+          , leafNode $ EType "Adjective"     (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Adjective Adjective))))))
+          , leafNode $ EType "Verb"          (Error  (Just $ Error_Grammar (Grammar  (Just $ Grammar_Replace (Replace (Just $ Replace_Verb Verb))))))
+          ]
         ]
       ]
    ]

@@ -7,15 +7,14 @@
 <!ELEMENT errtoks EMPTY>
 <!ELEMENT error (context|grammar|spelling)?>
 
-<!ELEMENT context (semantics|idiom|verbtense|redundancy)?>
-<!ELEMENT grammar (agreement|voice|collocation|countability|wrong|omitted|wo|morphology|redundancy)?>
+<!ELEMENT context (semantics|idiom|verbtense|redundancy|omitted|replace)?>
+<!ELEMENT grammar (agreement|verbtense|voice|collocation|countability|replace|omitted|wo|morphology|redundancy)?>
 <!ELEMENT spelling (homonymy|register|diacritics|local)?>
-<!ELEMENT gibberish EMPTY>
 
 <!ELEMENT lexical EMPTY>
 <!ELEMENT agreement (number|gender|case|person|tense)?>
-<!ELEMENT omitted (subject|predicate|object|noun|conjunction|preposition|pronoun|determiner|adjective|verb)?>
-<!ELEMENT wrong (noun|conjunction|preposition|pronoun|determiner|adjective|verb)?>
+<!ELEMENT omitted (subject|predicate|object|noun|conjunction|adverb|preposition|pronoun|determiner|adjective|verb)?>
+<!ELEMENT replace (noun|conjunction|preposition|adverb|pronoun|determiner|adjective|verb)?>
 <!ELEMENT object (direct|indirect)? >
 <!ELEMENT morphology (derivation|compounding|inflection)? >
 <!ELEMENT wo (internal|external)? >
@@ -28,6 +27,7 @@
 <!ELEMENT subject EMPTY >
 <!ELEMENT predicate EMPTY >
 <!ELEMENT preposition EMPTY >
+<!ELEMENT adverb EMPTY >
 <!ELEMENT pronoun EMPTY >
 <!ELEMENT noun EMPTY >
 <!ELEMENT redundancy EMPTY >

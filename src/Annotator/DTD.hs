@@ -36,13 +36,16 @@ data Context_ = Context_Semantics Semantics
               | Context_Idiom Idiom
               | Context_Verbtense Verbtense
               | Context_Redundancy Redundancy
+              | Context_Omitted Omitted
+              | Context_Replace Replace
               deriving (Eq,Show)
 newtype Grammar = Grammar (Maybe Grammar_) 		deriving (Eq,Show)
 data Grammar_ = Grammar_Agreement Agreement
+              | Grammar_Verbtense Verbtense
               | Grammar_Voice Voice
               | Grammar_Collocation Collocation
               | Grammar_Countability Countability
-              | Grammar_Wrong Wrong
+              | Grammar_Replace Replace
               | Grammar_Omitted Omitted
               | Grammar_Wo Wo
               | Grammar_Morphology Morphology
@@ -54,7 +57,6 @@ data Spelling_ = Spelling_Homonymy Homonymy
                | Spelling_Diacritics Diacritics
                | Spelling_Local Local
                deriving (Eq,Show)
-data Gibberish = Gibberish 		deriving (Eq,Show)
 data Lexical = Lexical 		deriving (Eq,Show)
 newtype Agreement = Agreement (Maybe Agreement_) 		deriving (Eq,Show)
 data Agreement_ = Agreement_Number Number
@@ -69,21 +71,23 @@ data Omitted_ = Omitted_Subject Subject
               | Omitted_Object Object
               | Omitted_Noun Noun
               | Omitted_Conjunction Conjunction
+              | Omitted_Adverb Adverb
               | Omitted_Preposition Preposition
               | Omitted_Pronoun Pronoun
               | Omitted_Determiner Determiner
               | Omitted_Adjective Adjective
               | Omitted_Verb Verb
               deriving (Eq,Show)
-newtype Wrong = Wrong (Maybe Wrong_) 		deriving (Eq,Show)
-data Wrong_ = Wrong_Noun Noun
-            | Wrong_Conjunction Conjunction
-            | Wrong_Preposition Preposition
-            | Wrong_Pronoun Pronoun
-            | Wrong_Determiner Determiner
-            | Wrong_Adjective Adjective
-            | Wrong_Verb Verb
-            deriving (Eq,Show)
+newtype Replace = Replace (Maybe Replace_) 		deriving (Eq,Show)
+data Replace_ = Replace_Noun Noun
+              | Replace_Conjunction Conjunction
+              | Replace_Preposition Preposition
+              | Replace_Adverb Adverb
+              | Replace_Pronoun Pronoun
+              | Replace_Determiner Determiner
+              | Replace_Adjective Adjective
+              | Replace_Verb Verb
+              deriving (Eq,Show)
 newtype Object = Object (Maybe Object_) 		deriving (Eq,Show)
 data Object_ = Object_Direct Direct
              | Object_Indirect Indirect
@@ -105,6 +109,7 @@ data Person = Person 		deriving (Eq,Show)
 data Subject = Subject 		deriving (Eq,Show)
 data Predicate = Predicate 		deriving (Eq,Show)
 data Preposition = Preposition 		deriving (Eq,Show)
+data Adverb = Adverb 		deriving (Eq,Show)
 data Pronoun = Pronoun 		deriving (Eq,Show)
 data Noun = Noun 		deriving (Eq,Show)
 data Redundancy = Redundancy 		deriving (Eq,Show)
@@ -268,11 +273,15 @@ instance XmlContent Context_ where
     toContents (Context_Idiom a) = toContents a
     toContents (Context_Verbtense a) = toContents a
     toContents (Context_Redundancy a) = toContents a
+    toContents (Context_Omitted a) = toContents a
+    toContents (Context_Replace a) = toContents a
     parseContents = oneOf
         [ return (Context_Semantics) `apply` parseContents
         , return (Context_Idiom) `apply` parseContents
         , return (Context_Verbtense) `apply` parseContents
         , return (Context_Redundancy) `apply` parseContents
+        , return (Context_Omitted) `apply` parseContents
+        , return (Context_Replace) `apply` parseContents
         ] `adjustErr` ("in <context>, "++)
 
 instance HTypeable Grammar where
@@ -289,20 +298,22 @@ instance HTypeable Grammar_ where
     toHType x = Defined "grammar" [] []
 instance XmlContent Grammar_ where
     toContents (Grammar_Agreement a) = toContents a
+    toContents (Grammar_Verbtense a) = toContents a
     toContents (Grammar_Voice a) = toContents a
     toContents (Grammar_Collocation a) = toContents a
     toContents (Grammar_Countability a) = toContents a
-    toContents (Grammar_Wrong a) = toContents a
+    toContents (Grammar_Replace a) = toContents a
     toContents (Grammar_Omitted a) = toContents a
     toContents (Grammar_Wo a) = toContents a
     toContents (Grammar_Morphology a) = toContents a
     toContents (Grammar_Redundancy a) = toContents a
     parseContents = oneOf
         [ return (Grammar_Agreement) `apply` parseContents
+        , return (Grammar_Verbtense) `apply` parseContents
         , return (Grammar_Voice) `apply` parseContents
         , return (Grammar_Collocation) `apply` parseContents
         , return (Grammar_Countability) `apply` parseContents
-        , return (Grammar_Wrong) `apply` parseContents
+        , return (Grammar_Replace) `apply` parseContents
         , return (Grammar_Omitted) `apply` parseContents
         , return (Grammar_Wo) `apply` parseContents
         , return (Grammar_Morphology) `apply` parseContents
@@ -332,16 +343,6 @@ instance XmlContent Spelling_ where
         , return (Spelling_Diacritics) `apply` parseContents
         , return (Spelling_Local) `apply` parseContents
         ] `adjustErr` ("in <spelling>, "++)
-
-instance HTypeable Gibberish where
-    toHType x = Defined "gibberish" [] []
-instance XmlContent Gibberish where
-    toContents Gibberish =
-        [CElem (Elem "gibberish" [] []) ()]
-    parseContents = do
-        { (Elem _ as []) <- element ["gibberish"]
-        ; return Gibberish
-        } `adjustErr` ("in <gibberish>, "++)
 
 instance HTypeable Lexical where
     toHType x = Defined "lexical" [] []
@@ -397,6 +398,7 @@ instance XmlContent Omitted_ where
     toContents (Omitted_Object a) = toContents a
     toContents (Omitted_Noun a) = toContents a
     toContents (Omitted_Conjunction a) = toContents a
+    toContents (Omitted_Adverb a) = toContents a
     toContents (Omitted_Preposition a) = toContents a
     toContents (Omitted_Pronoun a) = toContents a
     toContents (Omitted_Determiner a) = toContents a
@@ -408,6 +410,7 @@ instance XmlContent Omitted_ where
         , return (Omitted_Object) `apply` parseContents
         , return (Omitted_Noun) `apply` parseContents
         , return (Omitted_Conjunction) `apply` parseContents
+        , return (Omitted_Adverb) `apply` parseContents
         , return (Omitted_Preposition) `apply` parseContents
         , return (Omitted_Pronoun) `apply` parseContents
         , return (Omitted_Determiner) `apply` parseContents
@@ -415,35 +418,37 @@ instance XmlContent Omitted_ where
         , return (Omitted_Verb) `apply` parseContents
         ] `adjustErr` ("in <omitted>, "++)
 
-instance HTypeable Wrong where
-    toHType x = Defined "wrong" [] []
-instance XmlContent Wrong where
-    toContents (Wrong a) =
-        [CElem (Elem "wrong" [] (maybe [] toContents a)) ()]
+instance HTypeable Replace where
+    toHType x = Defined "replace" [] []
+instance XmlContent Replace where
+    toContents (Replace a) =
+        [CElem (Elem "replace" [] (maybe [] toContents a)) ()]
     parseContents = do
-        { e@(Elem _ [] _) <- element ["wrong"]
-        ; interior e $ return (Wrong) `apply` optional parseContents
-        } `adjustErr` ("in <wrong>, "++)
+        { e@(Elem _ [] _) <- element ["replace"]
+        ; interior e $ return (Replace) `apply` optional parseContents
+        } `adjustErr` ("in <replace>, "++)
 
-instance HTypeable Wrong_ where
-    toHType x = Defined "wrong" [] []
-instance XmlContent Wrong_ where
-    toContents (Wrong_Noun a) = toContents a
-    toContents (Wrong_Conjunction a) = toContents a
-    toContents (Wrong_Preposition a) = toContents a
-    toContents (Wrong_Pronoun a) = toContents a
-    toContents (Wrong_Determiner a) = toContents a
-    toContents (Wrong_Adjective a) = toContents a
-    toContents (Wrong_Verb a) = toContents a
+instance HTypeable Replace_ where
+    toHType x = Defined "replace" [] []
+instance XmlContent Replace_ where
+    toContents (Replace_Noun a) = toContents a
+    toContents (Replace_Conjunction a) = toContents a
+    toContents (Replace_Preposition a) = toContents a
+    toContents (Replace_Adverb a) = toContents a
+    toContents (Replace_Pronoun a) = toContents a
+    toContents (Replace_Determiner a) = toContents a
+    toContents (Replace_Adjective a) = toContents a
+    toContents (Replace_Verb a) = toContents a
     parseContents = oneOf
-        [ return (Wrong_Noun) `apply` parseContents
-        , return (Wrong_Conjunction) `apply` parseContents
-        , return (Wrong_Preposition) `apply` parseContents
-        , return (Wrong_Pronoun) `apply` parseContents
-        , return (Wrong_Determiner) `apply` parseContents
-        , return (Wrong_Adjective) `apply` parseContents
-        , return (Wrong_Verb) `apply` parseContents
-        ] `adjustErr` ("in <wrong>, "++)
+        [ return (Replace_Noun) `apply` parseContents
+        , return (Replace_Conjunction) `apply` parseContents
+        , return (Replace_Preposition) `apply` parseContents
+        , return (Replace_Adverb) `apply` parseContents
+        , return (Replace_Pronoun) `apply` parseContents
+        , return (Replace_Determiner) `apply` parseContents
+        , return (Replace_Adjective) `apply` parseContents
+        , return (Replace_Verb) `apply` parseContents
+        ] `adjustErr` ("in <replace>, "++)
 
 instance HTypeable Object where
     toHType x = Defined "object" [] []
@@ -586,6 +591,16 @@ instance XmlContent Preposition where
         { (Elem _ as []) <- element ["preposition"]
         ; return Preposition
         } `adjustErr` ("in <preposition>, "++)
+
+instance HTypeable Adverb where
+    toHType x = Defined "adverb" [] []
+instance XmlContent Adverb where
+    toContents Adverb =
+        [CElem (Elem "adverb" [] []) ()]
+    parseContents = do
+        { (Elem _ as []) <- element ["adverb"]
+        ; return Adverb
+        } `adjustErr` ("in <adverb>, "++)
 
 instance HTypeable Pronoun where
     toHType x = Defined "pronoun" [] []
