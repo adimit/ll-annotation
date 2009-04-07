@@ -11,8 +11,8 @@ import Text.XML.HaXml.XmlContent.Haskell (readXml)
 
 data ComparedRecords = ComparedRecords { agreement    :: [RecordPair]
                                        , disagreement :: ([Record],[Record]) } 
-                                       deriving Show, Eq
-data RecordPair = RecordPair Record Record deriving Eq
+                                       deriving (Show, Eq)
+data RecordPair = RecordPair Record Record deriving (Show, Eq)
 
 main :: IO ()
 main = do args <- getArgs
