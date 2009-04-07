@@ -28,8 +28,12 @@ shortenErrorType = (filter isIrrelevant) . words . (filter $ not.isParen) . show
 putTokensOnLabels :: Gui -> IO ()
 putTokensOnLabels gui = do tkns <- readIORef (selectedTkn gui)
                            trigs <- readIORef (trigger gui)
-                           (tokenLabel gui) `labelSetText` (show $ map tokenString (sort tkns))
-                           (triggerBtn gui) `buttonSetLabel` (show $ map tokenString (sort trigs))
+                           if tkns == []
+                              then (tokenLabel gui) `labelSetText` "Tokens"
+                              else (tokenLabel gui) `labelSetText` (show $ map tokenString (sort tkns))
+                           if trigs == []
+                              then (triggerBtn gui) `buttonSetLabel` "Trigger"
+                              else (triggerBtn gui) `buttonSetLabel` (show $ map tokenString (sort trigs))
 
 tokenId :: Token -> String
 tokenId (Token (Token_Attrs idx) _) = idx

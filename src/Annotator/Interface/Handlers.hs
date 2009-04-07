@@ -39,7 +39,7 @@ recordHandler gui view =
 
 addToErrorView :: Gui -> Record -> IO ()
 addToErrorView gui record@(Record _ (Errtoks tokens) _ _ _) = do
-        (\model -> model `listStorePrepend` record) =<< (readIORef (errorModel gui))
+        (\model -> model `listStoreAppend` record) =<< (readIORef (errorModel gui))
         highlightTags gui (words tokens)
 
 makeRecord :: Gui -> Error -> IO Record
@@ -76,6 +76,8 @@ clearBtnHandler gui =  do writeIORef (selectedTkn gui) []
                           writeIORef (trigger     gui) []
                           writeIORef (currentFocs gui) (selectedTkn gui)
                           (triggerBtn gui) `toggleButtonSetActive` False
+                          (flip entrySetText $ "Target Hypothesis") =<< (xmlGetWidget (xml gui) castToEntry "targetField")
+                          (flip entrySetText $ "Comment") =<< (xmlGetWidget (xml gui) castToEntry "commentField")
                           putTokensOnLabels gui
 
 tagEventHandler :: Gui -> Token -> Old.Event -> TextIter -> IO ()
