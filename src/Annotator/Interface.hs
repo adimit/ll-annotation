@@ -109,6 +109,7 @@ initControls :: Gui -> IO ()
 initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItemQuit
                       openItem <- xmlGetWidget (xml gui) castToMenuItem menuItemOpen
                       clearBtn <- xmlGetWidget (xml gui) castToButton "clearButton"
+                      changeBtn <- xmlGetWidget (xml gui) castToButton "changeButton"
                       quitItem `afterActivateLeaf` widgetDestroy (window gui)
                       openItem `afterActivateLeaf` openItemHandler gui
                       clearBtn `onClicked` clearBtnHandler gui
@@ -123,11 +124,14 @@ initControls gui = do quitItem <- xmlGetWidget (xml gui) castToMenuItem menuItem
                       (triggerBtn gui) `afterToggled` triggerToggleHandler gui
                       targetField <- xmlGetWidget (xml gui) castToEntry "targetField"
                       commentField <- xmlGetWidget (xml gui) castToEntry "commentField"
+                      changeBtn `onClicked` changeButtonHandler gui errorView listView
                       targetField `on` focusInEvent $ deleteField "Target Hypothesis" targetField
                       commentField `on` focusInEvent $ deleteField "Comment" commentField
                       targetField `on` focusOutEvent $ restoreField "Target Hypothesis" targetField
                       commentField `on` focusOutEvent $ restoreField "Comment" commentField
+
                       return ()
+
 
 deleteField :: String -> Entry -> EventM EFocus Bool
 deleteField s e = liftIO $ do text <- entryGetText e
