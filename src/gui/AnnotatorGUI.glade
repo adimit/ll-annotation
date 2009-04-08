@@ -153,10 +153,13 @@
                         <property name="n_columns">2</property>
                         <child>
                           <widget class="GtkToggleButton" id="triggerButton">
-                            <property name="label" translatable="yes">Trigger</property>
+                            <property name="label" translatable="yes">Tr_igger</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="use_underline">True</property>
+                            <accelerator key="space" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
+                            <accelerator key="space" signal="clicked" modifiers="GDK_MOD1_MASK"/>
                           </widget>
                           <packing>
                             <property name="top_attach">1</property>
@@ -178,6 +181,7 @@
                             <property name="invisible_char">&#x2022;</property>
                             <property name="text" translatable="yes">Comment</property>
                             <property name="primary_icon_stock">gtk-justify-left</property>
+                            <accelerator key="c" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                           </widget>
                           <packing>
                             <property name="left_attach">1</property>
@@ -193,6 +197,7 @@
                             <property name="invisible_char">&#x2022;</property>
                             <property name="text" translatable="yes">Target Hypothesis</property>
                             <property name="primary_icon_stock">gtk-jump-to</property>
+                            <accelerator key="t" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                           </widget>
                           <packing>
                             <property name="left_attach">1</property>
@@ -206,6 +211,7 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="use_stock">True</property>
+                            <accelerator key="Escape" signal="clicked" modifiers="GDK_CONTROL_MASK"/>
                           </widget>
                           <packing>
                             <property name="top_attach">2</property>
@@ -219,6 +225,7 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="use_stock">True</property>
+                            <accelerator key="Return" signal="clicked"/>
                           </widget>
                           <packing>
                             <property name="left_attach">1</property>
