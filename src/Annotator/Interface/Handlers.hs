@@ -14,6 +14,19 @@ import qualified Graphics.UI.Gtk.Gdk.Events as Old
 import System.Glib.Attributes
 import Text.XML.HaXml.XmlContent (XmlContent)
 
+--changeButtonHandler :: Gui -> IO ()
+changeButtonHandler gui etypeview elist = do
+    [path] <- treeSelectionGetSelectedRows =<< (treeViewGetSelection etypeview)
+    (EType _ record) <- (\store -> store `treeStoreGetValue` path) =<< errorStore
+
+    lmodel <- readIORef (errorModel gui)
+    [row] <- treeSelectionGetSelectedRows =<< (treeViewGetSelection elist)
+    (Record attrs tokens _ target comment) <- lmodel `listStoreGetValue` (head row)
+    deleteThisRecord gui row
+    lmodel `listStoreAppend` (Record attrs tokens record target comment)
+    return ()
+
+
 deleteHandler :: Gui -> TreeView -> IO ()
 deleteHandler gui view = do
     rows <- treeSelectionGetSelectedRows =<< (treeViewGetSelection view)
