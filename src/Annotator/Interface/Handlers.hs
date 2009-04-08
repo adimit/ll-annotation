@@ -16,15 +16,20 @@ import Text.XML.HaXml.XmlContent (XmlContent)
 
 --changeButtonHandler :: Gui -> IO ()
 changeButtonHandler gui etypeview elist = do
-    [path] <- treeSelectionGetSelectedRows =<< (treeViewGetSelection etypeview)
-    (EType _ record) <- (\store -> store `treeStoreGetValue` path) =<< errorStore
-
+    paths <- treeSelectionGetSelectedRows =<< (treeViewGetSelection etypeview)
     lmodel <- readIORef (errorModel gui)
-    [row] <- treeSelectionGetSelectedRows =<< (treeViewGetSelection elist)
-    (Record attrs tokens _ target comment) <- lmodel `listStoreGetValue` (head row)
-    deleteThisRecord gui row
-    lmodel `listStoreAppend` (Record attrs tokens record target comment)
-    return ()
+    rows <- treeSelectionGetSelectedRows =<< (treeViewGetSelection elist)
+
+    case paths of
+         [path] -> case rows of
+                        [row] -> do (EType _ record) <- (\store -> store `treeStoreGetValue` path) =<< errorStore
+                                    (Record attrs tokens _ target comment) <- lmodel `listStoreGetValue` (head row)
+                                    deleteThisRecord gui row
+                                    lmodel `listStoreAppend` (Record attrs tokens record target comment)
+                                    return ()
+                        _ -> putStrLn "No row seleceted"
+         _ -> putStrLn "No path seleceted"
+
 
 
 deleteHandler :: Gui -> TreeView -> IO ()
