@@ -39,32 +39,62 @@ compareCorpora _          = putStrLn "Sorry, but only two corpora can be evaluat
 compareErrors2 :: [Record] -> [Record] -> IO ()
 compareErrors2 es1 es2 = do
         printColumn2 "Annotations" (show $ length es1) (show $ length es2)
-        printColumn "Total agreement" (show . length $ intersectBy recordIdentity es1 es2)
-        printColumn "Token agreement" (show . length $ intersectBy tokenIdentity es1 es2)
-        printColumn "token + subtree" (show . length $ intersectBy tokenSubtree es1 es2)
-        printColumn "token subset" (show . length $ intersectBy tokenSubset es1 es2)
-        printColumn "subset subtree" (show . length $ intersectBy subsetSubtree es1 es2)
-        printColumn "nonmatches" (show . length $ intersectBy (not subsetSubtree) es1 es2)
+        putStrLn "\nThree data points\n***"
+        printColumn "io + iy + ir" $
+                evaluate ((equality errtoks) /&\ (equality etype) /&\ (equality trigger)) es1 es2
+        printColumn "so + iy + ir" $
+                evaluate ((subset errtoks) /&\ (equality etype) /&\ (equality trigger)) es1 es2
+        printColumn "io + sy + ir" $
+                evaluate ((equality errtoks) /&\ (subtree etype) /&\ (equality trigger)) es1 es2
+        printColumn "io + iy + sr" $
+                evaluate ((equality errtoks) /&\ (equality etype) /&\ (subset trigger)) es1 es2
+        printColumn "so + sy + ir" $
+                evaluate ((subset errtoks) /&\ (subtree etype) /&\ (equality trigger)) es1 es2
+        printColumn "io + sy + sr" $
+                evaluate ((equality errtoks) /&\ (subtree etype) /&\ (subset trigger)) es1 es2
+        printColumn "so + iy + sr" $
+                evaluate ((subset errtoks) /&\ (equality etype) /&\ (subset trigger)) es1 es2
+        printColumn "so + sy + sr" $
+                evaluate ((subset errtoks) /&\ (subtree etype) /&\ (subset trigger)) es1 es2
+        putStrLn "Two data points\n***"
+        printColumn "io + iy" $
+                evaluate ((equality errtoks) /&\ (equality etype)) es1 es2
+        printColumn "so + iy" $
+                evaluate ((subset errtoks) /&\ (equality etype)) es1 es2
+        printColumn "io + sy" $
+                evaluate ((equality errtoks) /&\ (subtree etype)) es1 es2
+        printColumn "so + sy" $
+                evaluate ((subset errtoks) /&\ (subtree etype)) es1 es2
+        printColumn "io + ir" $
+                evaluate ((equality errtoks) /&\ (equality trigger)) es1 es2
+        printColumn "so + ir" $
+                evaluate ((subset errtoks) /&\ (equality trigger)) es1 es2
+        printColumn "io + sr" $
+                evaluate ((equality errtoks) /&\ (subset trigger)) es1 es2
+        printColumn "so + sr" $
+                evaluate ((subset errtoks) /&\ (subset trigger)) es1 es2
+        putStrLn "\nOne Data point\n***"
+        printColumn "io" $
+                evaluate ((equality errtoks)) es1 es2
+        printColumn "so" $
+                evaluate ((subset errtoks)) es1 es2
 
-recordIdentity :: Record -> Record -> Bool
-recordIdentity l r = tokenIdentity l r && errortype l == errortype r
+(\||/) :: [String] -> [String] -> Bool
+[] \||/ _              = True
+_ \||/ []              = True
+(sl:ssl) \||/ (sr:ssr) =  sl == sr &&  ssl \||/ ssr
 
-tokenIdentity :: Record -> Record -> Bool
-tokenIdentity l r = errtoks l == errtoks r
+subset f l r | (f l) == [] || (f r) == [] = True
+subset f l r = intersect (f l) (f r) /= []
+equality f l r = (f l) == (f r)
+subtree f l r = f l \||/ f r
 
-tokenSubtree  :: Record -> Record -> Bool
-tokenSubtree  l r = tokenIdentity l r && subtreeIdentity (errortype l) (errortype r)
 
-tokenSubset   :: Record -> Record -> Bool
-tokenSubset   l r = intersect (errtoks l) (errtoks r) /= []
+(/&\) :: (a -> b -> Bool) -> (a -> b -> Bool) -> (a -> b -> Bool)
+f /&\ s = \l r -> f l r && s l r
 
-subsetSubtree :: Record -> Record -> Bool
-subsetSubtree l r = tokenSubset l r && subtreeIdentity (errortype l) (errortype r)
+evaluate f = \l r -> show . length $ intersectBy f l r
 
-subtreeIdentity :: [String] -> [String] -> Bool
-subtreeIdentity [] _  = True
-subtreeIdentity _  [] = True
-subtreeIdentity (sl:ssl) (sr:ssr) =  sl == sr || subtreeIdentity ssl ssr
 
 printColumn :: String -> String -> IO ()
 printColumn name s1 = do putStr $ staticString 15 name
@@ -85,7 +115,11 @@ staticString n s | (length s) < n = replicate (n - length s) ' ' ++ s
 errtoks :: Record -> [String]
 errtoks (Record _ (Errtoks t1) _ _ _) = sort $ words t1
 
-errortype :: Record -> [String]
-errortype (Record _ _ t _ _) = shortenErrorType t
+etype :: Record -> [String]
+etype (Record _ _ t _ _) = shortenErrorType t
+
+trigger :: Record -> [String]
+trigger (Record (Record_Attrs Nothing _ ) _ _ _ _) = []
+trigger (Record (Record_Attrs (Just trigger) _ ) _ _ _ _) = sort $ words trigger
 
 files = ["../../test/t1.xml","../../test/t2.xml"]

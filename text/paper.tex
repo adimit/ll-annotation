@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass{scrartcl}
 \usepackage[utf8x]{inputenc}
 \usepackage{aleks}
 \author{Magdalena Leshtanska \and Aleksandar Dimitrov}
@@ -93,6 +93,8 @@ however, semantically incorrect given the current context.
 of their erroneous morphology or syntax.
 \end{enumerate}
 
+[Follows information about triggers, and how the play into this general scheme ]
+
 \subsection{Representing Errors in Annotations}\label{sec:errorformat}
 
 An error annotation is a tuple $\pair{E,C,\theta,t,c}$, where
@@ -135,7 +137,7 @@ valid within the sentence.
 Retain existing input by the author of the text to the greatest extent possible.
 The text should be only minimally altered in the target hypothesis.
 
-\section{Conclusion}\label{sec:results}
+\section{Assessment}\label{sec:results}
 
 Statistical inter-annotator agreement  measures are a common quality assessment
 method used in corpus linguistics and related fields. Hereby, annotations made
@@ -183,6 +185,44 @@ showed earlier % FIXME: where
 that often learner errors will not present a coherent unit, but may be scattered
 across several tokens. $\alpha_U$ does not account for the possibility of
 annotations deviating \textit{within} the boundaries of a marked up error.
+
+\subsection{Quantificational Analysis}
+
+\begin{table}
+  \centering
+\begin{tabular}{r|c|c}
+  Total: & (905,933)& (98.69\%,101.74\%)\\\hline
+  $io \wedge iy \wedge ir$:& 438 & 47.76 \%\\
+  $so \wedge iy \wedge ir$:& 448 & 48.85 \%\\
+  $io \wedge sy \wedge ir$:& 447 & 48.74 \%\\
+  $io \wedge iy \wedge sr$:& 480 & 52.34 \%\\
+  $so \wedge sy \wedge ir$:& 476 & 51.90 \%\\
+  $io \wedge sy \wedge sr$:& 503 & 54.85 \%\\
+  $so \wedge iy \wedge sr$:& 499 & 54.41 \%\\
+  $so \wedge sy \wedge sr$:& 544 & 59.32 \%\\
+  $     io \wedge iy$:& 486      & 52.99 \%\\
+  $     so \wedge iy$:& 506      & 55.17 \%\\
+  $     io \wedge sy$:& 509      & 55.50 \%\\
+  $     so \wedge sy$:& 551      & 60.08 \%\\
+  $     io \wedge ir$:& 525      & 57.25 \%\\
+  $     so \wedge ir$:& 578      & 63.03 \%\\
+  $     io \wedge sr$:& 623      & 67.93 \%\\
+  $     so \wedge sr$:& 719      & 78.40 \%\\
+  $          io$:& 629           & 68.59 \%\\
+  $          so$:& 730           & 79.60 \%\\
+\end{tabular}
+\caption{Absolute amount of annotation overlap.}\label{tab:1}
+
+\end{table}
+
+Table \ref{tab:1} shows the total amount of corresponding data in the individual
+markup. The table's labeling reads as follows: $s$ stands for a non-empty
+intersection (or prefix relation for the error types) and $i$ for equality.
+$o,y,r$ denote the data type: $o$ stands for error tOkens, $y$ for the error's
+tYpe, and $r$ for the errors context (or \textit{tRigger}). Thus, $so\wedge
+sy\wedge ir$ is the number of all annotations that have a partial overlap on the
+error tokens $E$, a prefix match on the error type $\theta$, and identical error
+context.
 
 \subsection{Possible Extensions}
 
