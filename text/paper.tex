@@ -1,6 +1,8 @@
 \documentclass[12pt]{article}
 \usepackage[utf8x]{inputenc}
 \usepackage{graphicx,linguex,natbib,aleks,amsmath,amsthm}
+\bibpunct{(}{)}{;}{a}{,}{,}
+\bibliographystyle{plainnat}
 \author{Magdalena Leshtanska \and Aleksandar Dimitrov}
 \title{Error-Centric Annotation of Learner Corpora}
 \begin{document}
@@ -18,63 +20,32 @@ and underspecification methods for error annotations, based on a flexible annota
 \section{Introduction}\label{sec:intro}
 
 Recently, there has been a growing interest in learner language corpora and
-learner errors analysis (citation). There is a need to
-identify errors in text, to make the automatic processing of those texts
-feasible\cite{nessel}. Also, the potential of learner errors for educational purposes and language
-acquisition insight has become increasingly recognized (citation), hence, many
-annotation schemes have been devised to identify and classify learner errors,
-such as \cite{negthesis}
+learner errors analysis \cite{nessel}. There is a need to identify errors in
+text produced by second language learners, to make the automatic processing of
+those texts feasible (ibid.). Also, the potential of learner errors for
+educational purposes and language acquisition insight has become increasingly
+recognized (ibid.), hence, many annotation schemes have been devised to
+identify and classify learner errors, such as \cite{negrillo}, \cite{CLC},
+\cite{ludeling}
 
 We propose a novel approach to annotating learner errors, based on the idea that
-an error is an inconsistency with its surroundings, rather .  This basic markup approach can be succesfully
-combined with any taxonomy for error ??classification. We have coupled it with a
-taxonomy for error classification and used the resulting scheme to annotate a
-subset of the NOce corpus (citation), achieving an inter-annotation agreement of
-???percent.
+an error is an inconsistency with its surroundings. This basic markup approach
+can be  combined with a taxonomy for error classification. We
+have coupled it with learner error  classification system and used the resulting
+scheme to annotate a subset of the NOCE corpus (\cite{negrilloph}), a corpus of
+beginning to intermediate English learners of Spanish.
 
-
-Firstly, every annotation scheme that operates directly on the text or spans
-over a piece of text will run into two kinds of problems:
-
-\begin{itemize}
-\item \textit{Interleaving annotations} occur when an error doesn't end before
-another one begins. Given the tokens $\tau_1 \tau_2 \tau_3$, and two errors
-$\eta_1$ and
-$\eta_2$ ranging over tokens $\tau_1$, $\tau_2$ and $\tau_2$ $\tau_3$ respectively, the
-resulting markup will be confusing or outright impossible to read: $(\eta_1)\tau_1
-(\eta_2)\tau_2(/\eta_1)\tau_3(/\eta_2)$. This is particularly a problem with XML,
-since the specification\footnotemark explicitly disallows interleaving
-markup.
-\item \textit{Greedy annotation} covers tokens entirely uninvolved in the
-\textit{``production''} of an error. If of the token sequence $\tau_1 \tau_2
-\tau_3$ only $\tau_1$
-and $\tau_3$ are erroneous,
-marking the entire token sequence with an error annotation would falsely accuse
-the
-otherwise completely innocent token $\tau_2$.
-\end{itemize}
-\footnotetext{Located at \texttt{http://www.w3.org/TR/REC-xml/}}
-
-Based on these assumptions, we decided to decouple the \textit{error markup}
-from the \textit{corpus data}. Specifically, to our annotation method, the
-errors and the text are two entirely different data structures. Every
-particular error can reference tokens within the corpus using a \textbf{key},
-similar to the way modern Relational Data Bases reference their data. This makes
-the index more accessible and easier to maintain and eliminates both problems
-above, because every single annotation can be completely independent from all
-other annotations.
+Section \ref{sec:scheme} will introduce the general idea behind our annotation
+scheme and elaborate on more technical details. Section 4 gives a brief overview
+of real world performance of our method. An annotation manual is contained in
+Appendix A.
 
 \section{Error Taxonomy and Annotation Scheme}\label{sec:scheme}
 
-In order to identify errors occurring in learner language, one has to first
-classify them. However, even then, identifying which class a particular error
-belongs to is in no way an easy job. Devising an exhaustive taxonomy of errors
-that can appear in natural language seems a daunting task, since science has so
-far failed to regularize what \textit{is} a valid utterance of a language.
-Therefore, our taxonomy will try to do some things only, and do them well. In
-particular, we will not cover punctuation mistakes, since their possible
-corrections can have cascading effects on the rest of the sentences and suddenly
-give rise to all kinds of new errors.
+Devising an exhaustive taxonomy of errors that can appear in natural language
+seems a daunting task, since science has so far failed to regularize what
+\textit{is} a valid utterance of a language.  Therefore, our annotation scheme
+strives  to  do some things only, and do them well.
 
 \subsection{Basic Concepts}\label{sec:threeholies}
 
@@ -107,6 +78,37 @@ The classification of errors, as well as establishing an error's scope and
 influence on the rest of the sentence are the main tasks in the annotation
 process of learner language. The following section documents our approach to
 these problems.
+
+Firstly, every annotation scheme that operates directly on the text or spans
+over a piece of text will run into two kinds of problems:
+
+\begin{itemize}
+\item \textit{Interleaving annotations} occur when an error doesn't end before
+another one begins. Given the tokens $\tau_1 \tau_2 \tau_3$, and two errors
+$\eta_1$ and
+$\eta_2$ ranging over tokens $\tau_1$, $\tau_2$ and $\tau_2$ $\tau_3$ respectively, the
+resulting markup will be confusing or outright impossible to read: $(\eta_1)\tau_1
+(\eta_2)\tau_2(/\eta_1)\tau_3(/\eta_2)$. This is particularly a problem with XML,
+since the specification\footnotemark explicitly disallows interleaving
+markup.
+\item \textit{Greedy annotation} covers tokens entirely uninvolved in the
+\textit{``production''} of an error. If of the token sequence $\tau_1 \tau_2
+\tau_3$ only $\tau_1$
+and $\tau_3$ are erroneous,
+marking the entire token sequence with an error annotation would falsely accuse
+the
+otherwise completely innocent token $\tau_2$.
+\end{itemize}
+\footnotetext{Located at \texttt{http://www.w3.org/TR/REC-xml/}}
+
+Based on these assumptions, we decided to decouple the \textit{error markup}
+from the \textit{corpus data}. Specifically, to our annotation method, the
+errors and the text are two entirely different data structures. Every
+particular error can reference tokens within the corpus using a \textbf{key},
+similar to the way modern Relational Data Bases reference their data. This makes
+the index more accessible and easier to maintain and eliminates both problems
+above, because every single annotation can be completely independent from all
+other annotations.
 
 \subsection{Error Context}
 
@@ -164,7 +166,7 @@ an annotation scheme to the error context paradigm, one must simply divide the
 types among our three basic error type categories: Spelling, Grammar and
 Context, as already described in \ref{sec:threeholies}.
 
-For our test taxonomy, we used the taxonomy described in \cite{negrillo} as a
+For our test taxonomy, we used the taxonomy described in \cite{negrilloph} as a
 base, and enhanced it by several concepts from the CLC annotation scheme, as
 specified in \cite{CLC}. While we retained the general ideas and structure of
 the aforementioned schemata, we aimed to improve their generality, and
@@ -200,7 +202,7 @@ annotation task less involved and more accurate.
   We chose to ignore such errors, since they are not a sign of weakness in the
   target language but likely pure by chance mistakes.
   \item \textit{Style Errors.} Style is too soft a concept. Errors in style are
-  notoriously hard to peg and reliably quantify. Moreover, the NOCE corpus
+  notoriously hard to peg and reliably quantify. Moreover, our corpus
   contained data mostly from beginning English learners, where style errors are
   not as important, evident or relevant.
   \item \textit{Punctuation.} Punctuation mistakes are a very delicate concern:
@@ -221,7 +223,7 @@ make reliable judgements about it.
 \subsection{Markup}
 
 The source files for our corpus consisted of plain text files from the
-NOCE-corpus % FIXME cite
+NOCE-corpus (\cite{negrilloph})
 of beginning to intermediate Spanish learners of English. Our corpus
 format is defined in \ref{def:errorformat}
 
@@ -274,7 +276,7 @@ Errors within a token cannot be analyzed – for example, agglutination, because
 Statistical inter-annotator agreement  measures are a common quality assessment
 method used in corpus linguistics and related fields. Hereby, annotations made
 on a particular data set by two or more annotators are compared using
-quantitative methods.  \cite{ap2008} give an overview of currently employed
+quantitative methods.  \cite{artstein} give an overview of currently employed
 methods.
 
 While inter-annotator agreement measures have been applied successfully to
@@ -292,11 +294,11 @@ diverse in nature, are not as easily contained in atomic units. Instead, a
 common task in the annotation of learner language is \textit{delineating}
 the extent of a certain mistake.
 
-\cite{ap2008} briefly discuss unitization and go on to note that it has thus far
+\cite{artstein} briefly discuss unitization and go on to note that it has thus far
 not been exhaustively researched. Even more importantly, they explicitly comment
 on the unknown status of the validity of the only inter-annotator agreement
 measure in the corpus linguistic literature, $\alpha_U$, presented in
-\cite{krip1995}.  Apart from being untested, $\alpha_U$ also seems to have
+\cite{krip}.  Apart from being untested, $\alpha_U$ also seems to have
 problems with overlapping markup both in the text, and between annotation sets
 (both of which are frequent in learner language data.) The measure also assumes
 annotation spans to be continuous, which is not the case in our data.
@@ -360,7 +362,7 @@ type $\theta$, and identical error context.
 \subsection{Possible Extensions}
 
 After assessing the quality of our data, we reached
-the conclusion that the error format described in \ref{sec:errorformat}
+the conclusion that the error format described in \ref{sec:taxonomy}
 might benefit from several refinements. Adding a field for part of speech tags
 might contribute to the clarity of the data, as well as to its searchability.
 The annotated corpus could be queried for erroneously placed verbs or
@@ -386,7 +388,7 @@ make the annotation process more precise.
 
 A part of speech tagger could aid the annotators and enhance the corpus data
 significantly. However, there are only a few reports on reliable part of speech
-tagging for learner language. \cite{luedeling} presents one such approach.
+tagging for learner language. \cite{ludeling} presents one such approach.
 
 \subsubsection{Towards an underspecification formalism for target hypotheses}
 
@@ -538,9 +540,18 @@ be as general as possible.
 creating a circular dependency, where an erroneous \textit{dogs} has as error
 context \textit{a} and an erroneous \textit{a} has as context \textit{docs}
 
-\subsection{Compound nouns:}
+\subsection{Compound nouns}
 
 If a compound noun of two or more words is erroneous, annotate only the head noun, carrying the mistake.
+
+\subsection{Sequences}
+For both triggers and erroneous tokens, it is best to use a single token. In
+case of a phrase, only take the keyword and at most any relevant information
+bearing token. In such a case, do not care about order.
+
+Still, fixed expressions, such as  Collocations or Idiom can be counted as one
+unit. In such a case, annotate the whole phrase, even if it contains erroneous
+tokens. Only do not annotate the target if it is within the idiom.
 
 
 \subsection{Word order}
@@ -562,10 +573,12 @@ a grammatical error. Also, if there is a typical trigger word for verb tenses
 it's a grammatical error. If the tense doesn't fit because of the broader
 context, it's a contextual mistake.
 
-\section{Source Code and XML Data}\label{sec:github}
+\section{Source Code and XML Data}\label{appendix:github}
 
 The complete code, as well as an up-to-date version of this paper can be found
 online at \texttt{www.github.com/adimit/ll-annotation}. The annotation schema's
 DTD is \texttt{AnnotationScheme.dtd} in the root directory of the repository.
+
+\bibliography{bib}
 
 \end{document}
