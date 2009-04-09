@@ -36,9 +36,9 @@ scheme to annotate a subset of the NOCE corpus (\cite{negrilloph}), a corpus of
 beginning to intermediate English learners of Spanish.
 
 Section \ref{sec:scheme} will introduce the general idea behind our annotation
-scheme and elaborate on more technical details. Section 4 gives a brief overview
-of real world performance of our method. An annotation manual is contained in
-Appendix A.
+scheme and elaborate on more technical details. Section 3  gives a brief
+overview of real world performance of our method, as far as this is indeed
+possible. An annotation manual is contained in Appendix A.
 
 \section{Error Taxonomy and Annotation Scheme}\label{sec:scheme}
 
@@ -78,37 +78,6 @@ The classification of errors, as well as establishing an error's scope and
 influence on the rest of the sentence are the main tasks in the annotation
 process of learner language. The following section documents our approach to
 these problems.
-
-Firstly, every annotation scheme that operates directly on the text or spans
-over a piece of text will run into two kinds of problems:
-
-\begin{itemize}
-\item \textit{Interleaving annotations} occur when an error doesn't end before
-another one begins. Given the tokens $\tau_1 \tau_2 \tau_3$, and two errors
-$\eta_1$ and
-$\eta_2$ ranging over tokens $\tau_1$, $\tau_2$ and $\tau_2$ $\tau_3$ respectively, the
-resulting markup will be confusing or outright impossible to read: $(\eta_1)\tau_1
-(\eta_2)\tau_2(/\eta_1)\tau_3(/\eta_2)$. This is particularly a problem with XML,
-since the specification\footnotemark explicitly disallows interleaving
-markup.
-\item \textit{Greedy annotation} covers tokens entirely uninvolved in the
-\textit{``production''} of an error. If of the token sequence $\tau_1 \tau_2
-\tau_3$ only $\tau_1$
-and $\tau_3$ are erroneous,
-marking the entire token sequence with an error annotation would falsely accuse
-the
-otherwise completely innocent token $\tau_2$.
-\end{itemize}
-\footnotetext{Located at \texttt{http://www.w3.org/TR/REC-xml/}}
-
-Based on these assumptions, we decided to decouple the \textit{error markup}
-from the \textit{corpus data}. Specifically, to our annotation method, the
-errors and the text are two entirely different data structures. Every
-particular error can reference tokens within the corpus using a \textbf{key},
-similar to the way modern Relational Data Bases reference their data. This makes
-the index more accessible and easier to maintain and eliminates both problems
-above, because every single annotation can be completely independent from all
-other annotations.
 
 \subsection{Error Context}
 
@@ -222,10 +191,44 @@ make reliable judgements about it.
 
 \subsection{Markup}
 
-The source files for our corpus consisted of plain text files from the
-NOCE-corpus (\cite{negrilloph})
-of beginning to intermediate Spanish learners of English. Our corpus
-format is defined in \ref{def:errorformat}
+The context mechanism in our annotation scheme can increase the complexity of the annotation
+process drastically. Since our annotation technique requires us to build a
+non-hierarchical graph structure over our input\footnotemark, a traditional
+sequential markup scheme scheme that operates directly on the text or spans
+over a piece of text will run into at least two kinds of problems:
+
+\footnotetext{Relating words and their dependencies more like a net than as a
+hierarchically nested span over a character sequence}
+
+\begin{itemize}
+\item \textit{Interleaving annotations} occur when an error doesn't end before
+another one begins. Given the tokens $\tau_1 \tau_2 \tau_3$, and two errors
+$\eta_1$ and
+$\eta_2$ ranging over tokens $\tau_1$, $\tau_2$ and $\tau_2$ $\tau_3$ respectively, the
+resulting markup will be confusing or outright impossible to read: $(\eta_1)\tau_1
+(\eta_2)\tau_2(/\eta_1)\tau_3(/\eta_2)$. This is particularly a problem with XML,
+since the specification\footnotemark explicitly disallows interleaving
+markup.
+\item \textit{Greedy annotation} covers tokens entirely uninvolved in the
+\textit{``production''} of an error. If of the token sequence $\tau_1 \tau_2
+\tau_3$ only $\tau_1$
+and $\tau_3$ are erroneous,
+marking the entire token sequence with an error annotation would falsely accuse
+the
+otherwise completely innocent token $\tau_2$.
+\end{itemize}
+\footnotetext{Located at \texttt{http://www.w3.org/TR/REC-xml/}}
+
+Based on these assumptions, we decided to decouple the \textit{error markup}
+from the \textit{corpus data}. Specifically, to our annotation method, the
+errors and the text are two entirely different data structures. Every particular
+error can reference tokens within the corpus using a \textbf{key}, similar to
+the way modern Relational Data Bases reference their data. This makes the index
+more accessible and easier to maintain and eliminates both problems above,
+because every single annotation can be completely independent from all other
+annotations.  The source files for our corpus consisted of plain text files from
+the NOCE-corpus of beginning to intermediate Spanish learners of English. Our
+corpus format is defined in \ref{def:errorformat}.
 
 \begin{definition}\label{def:errorformat}
 
@@ -259,17 +262,19 @@ tokens from the corpus as erroneous, assigns them a type, possibly an error
 context and suggest a target hypothesis or records a comment entirely via the
 interface.
 
-
 \footnotetext{The tool is implemented in Haskell (\texttt{www.haskell.org}) on
 top of the GTK  framework (\texttt{www.gtk.org}). It free and open source. The
 sources to the tool and the XML markup format are given in appendix
 \ref{appendix:github}.}
 
 \subsection{Limitations}
-Some elements, for example word order errors have enforced context, but it is hard to express via our schema, so we don't do it. 
-No correct positions specified by word order errors - also hard to express. One could assign them a target position after an existing token, but then one must also keep track of other "reorderings" by multiple word order errors - I would like beer some to drink - here, both erroneous units - some and to drink should be placed between like and beer, but one must take care to order them correctly. Also, as our schema tags all possible errors, in the case of interchangeable errors (cf XXX), one cannot be certain if the error annotated is really the one, made by the learner, and not the other possible one. Most  importantly, there are sometimes more than one places where a word sequence can fit in.
+Word order errors still pose a particular complication even to a non-sequential
+scheme such as ours. We are not able to account for the complex dependencies
+occurring in some word order mistakes simply by a dependency-graph.
 
-Errors within a token cannot be analyzed – for example, agglutination, because a token is our smallest unit.
+Since our minimal atomic unit is a token, we depend on a tokenization process.
+Furthermore, we cannot account for mistakes that occur on a scale smaller than a
+token.
 
 \section{Assessment}\label{sec:results}
 
