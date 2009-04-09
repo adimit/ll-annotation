@@ -1,10 +1,14 @@
-\documentclass{scrartcl}
+\documentclass[12pt]{scrartcl}
 \usepackage[utf8x]{inputenc}
-\usepackage{aleks}
+\usepackage{graphicx,linguex,natbib,aleks,amsmath,amsthm}
 \author{Magdalena Leshtanska \and Aleksandar Dimitrov}
 \title{Error-Centric Annotation of Learner Corpora}
 \begin{document}
 \maketitle
+
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{definition}[thm]{Definition}
+
 \tableofcontents
 \abstract{I am an abstract!}
 \section{Introduction}\label{sec:intro}
@@ -21,55 +25,33 @@ over a piece of text will run into two kinds of problems:
 
 \begin{itemize}
 \item \textit{Interleaving annotations} occur when an error doesn't end before
-another one begins. Given the tokens $a_1 a_2 a_3$, and two errors $e_1$ and
-$e_2$ ranging over tokens $a_1$, $a_2$ and $a_2$ $a_3$ respectively, the
-resulting markup will be confusing or outright impossible to read: $(e_1)a_1
-(e_2)a_2(/e_1)a_3(/e_2)$. This is particularly a problem with XML,
+another one begins. Given the tokens $\tau_1 \tau_2 \tau_3$, and two errors
+$\eta_1$ and
+$\eta_2$ ranging over tokens $\tau_1$, $\tau_2$ and $\tau_2$ $\tau_3$ respectively, the
+resulting markup will be confusing or outright impossible to read: $(\eta_1)\tau_1
+(\eta_2)\tau_2(/\eta_1)\tau_3(/\eta_2)$. This is particularly a problem with XML,
 since the specification\footnotemark explicitly disallows interleaving
 markup.
 \item \textit{Greedy annotation} covers tokens entirely uninvolved in the
-\textit{``production''} of an error. If of the tokens $a_1 a_2 a_3$ only $a_1$
-and $a_3$ are involved in the production of an error (say, an agreement error)
-marking the entire token sequence as erroneous would involve blaming the
-otherwise completely innocent token $a_2$. This can significantly increase the
-noise in a corpus.
+\textit{``production''} of an error. If of the token sequence $\tau_1 \tau_2
+\tau_3$ only $\tau_1$
+and $\tau_3$ are erroneous,
+marking the entire token sequence with an error annotation would falsely accuse
+the
+otherwise completely innocent token $\tau_2$.
 \end{itemize}
 \footnotetext{Located at \texttt{http://www.w3.org/TR/REC-xml/}}
 
-There is little data about the primary use cases for learner corpora known to
-us, but it does not seem too far fetched to assume most linguists interested in
-such data are not likely to browse through the corpora in order to find an
-amusingly written piece of text. Instead, it seems to be safe to assume that
-most would be interested in the \textbf{kinds of errors} that can occur in such
-a corpus, and their particular properties. The error data should thus contain as
-little noise as possible and be maximally specific while retaining a large amount
-of generality.  It should furthermore be easily accessible, without having to
-actually read the texts within the corpus itself.
-
 Based on these assumptions, we decided to decouple the \textit{error markup}
-from the \textit{corpus data}. Specifically, to our annotation scheme the
+from the \textit{corpus data}. Specifically, to our annotation method, the
 errors and the text are two entirely different data structures. Every
 particular error can reference tokens within the corpus using a \textbf{key},
 similar to the way modern Relational Data Bases reference their data. This makes
-the index more accessible and easier to maintain.
+the index more accessible and easier to maintain and eliminates both problems
+above, because every single annotation can be completely independent from all
+other annotations.
 
 \section{Error Taxonomy and Annotation Scheme}\label{sec:scheme}
-
-Learner errors are not easily classified due to their wide variety of
-appearance, kind, and ambiguities involved. Typically, an annotation scheme will
-strive to cover as large a scope it possibly can unambiguously classify, yet
-there are many practical limitations to the potential coverage one can achieve.
-
-One of the most prevalent restrictions is the need to devise the annotation
-manual with great attention to detail, and to perform a meaningful assessment of
-the quality of the annotated data after the annotation process. Even a most
-meticulously well-defined manual is still going to be read and applied by
-humans, who will have their personal intuition. It is easy to see
-why this inherent individuality poses problems to the consistency of any kind of
-annotated data. A well-written annotation manual will limit the effect this
-natural variance can have on the data.
-
-\subsection{Calling Errors by Name}\label{sec:taxonomy}
 
 In order to identify errors occurring in learner language, one has to first
 classify them. However, even then, identifying which class a particular error
@@ -81,61 +63,198 @@ particular, we will not cover punctuation mistakes, since their possible
 corrections can have cascading effects on the rest of the sentences and suddenly
 give rise to all kinds of new errors.
 
-Our annotation scheme presents three distinct kinds of errors.
+\subsection{Basic Concepts}\label{sec:threeholies}
 
-\begin{enumerate}
-\item \textit{Spelling errors} are a primitive form of error. They contain no
-meta-data or any kind of further specification except maybe a target word they
-should have ended up as.
-\item \textit{Context errors} are otherwise grammatical sentences which are,
-however, semantically incorrect given the current context.
-\item \textit{Grammar errors} simply do not belong to the target language because
-of their erroneous morphology or syntax.
-\end{enumerate}
+Our annotation scheme presents three distinct kinds of errors:
 
-[Follows information about triggers, and how the play into this general scheme ]
-
-\subsection{Representing Errors in Annotations}\label{sec:errorformat}
-
-An error annotation is a tuple $\pair{E,C,\theta,t,c}$, where
 \begin{itemize}
-  \item $E$ is a nonempty set of indices of erroneous tokens,
-  \item $C$ is a possibly empty set of context tokens 
+  \item \textit{Grammatical context.} each introduced token enforces constraints
+  on the utterance, or on parts of it. In \ref{swim}, \textit{remember} requires
+  a gerund, thus the form \textit{swim} is ungrammatical in this context. We
+  call such mistakes \textbf{grammar errors}.
+
+  \ex. *I remember swim in the river\label{swim}
+
+  \item \textit{Semantic context.}  In \ref{glue}, though the grammatical
+  structure is correct, the predicate does not fit the contextual information.
+  This is a contextual error.
+
+  \ex. *Yesterday I will go to the fair.\label{glue}
+
+  \item \textit{Spelling errors.} Spelling errors are typically not influenced
+  by contextual information, except for the normative context of a given
+  language's orthographic rules. Punctuation is a special case, since it may
+  also carry semantic information.
+
+  \end{itemize}
+
+\subsection{Calling Errors by Name}\label{sec:taxonomy}
+
+The classification of errors, as well as establishing an error's scope and 
+influence on the rest of the sentence are the main tasks in the annotation
+process of learner language. The following section documents our approach to
+these problems.
+
+\subsection{Error Context}
+
+Annotated learner corpora serve one primary purpose: categorizing and
+cataloguing different kinds of errors that may occur in learner language. In
+order for such data to be maximally useful, the error annotations have to be as
+general as possible. We strive to improve the quality of the data by only
+annotating erroneous tokens in a given error tag, thus not erroneously catching
+'good' tokens in our error annotation. This, however, comes at a cost: if only
+the ungrammatical token is identified as an error, its classification is no
+longer justified from with in the error annotation itself. Consider the
+following sentence:
+
+\ex. Before she came, *She had going to the super market.
+
+Here, the only erroneous token is \textit{going}, yet it is not by itself a
+wrong word. This is where error context comes into play: since the error
+annotation could not possibly tag "going" as a "badly formed verb tense", because, by
+itself there is nothing wrong with it, we add "Before she came" to its
+\textbf{error context} and apply the aforementioned type to the whole unit
+consisting of erroneous token and error context. This error dependency mechanism
+allows error annotations to be confined to a minimal space and still be
+interpretable by themselves.
+
+Another common pitfall for error taxonomies are ambiguous cases where the
+annotator has to decide between several possible annotations. This may be
+avoided by advising annotation of every conceived alternative in such cases,
+creating overlapping markup. Typically, morphological errors, spelling errors,
+word order errors, and other kinds of errors will form distinct levels that can
+stack to a cumulative layer of errors on a single token. It is also interesting
+to note that context/error pairs can form locking formations, where one error's
+context can be another error, whose context will point to the original error in
+turn.
+
+\ex. *A mobile phones can be very useful.
+
+Here, the determiner and the subject do not agree in number, but it is not clear
+which one is wrong. There are two possible corrections, which would result
+in the subject ending up as plural or singular, respectively. Therefore, we tag
+two errors, a number agreement error on \textit{a} with context \textit{phones}, and
+one on \textit{phones}, with context \textit{a}. Note that annotating only "a
+phones" as an agreement error would not account for the two possible target
+hypotheses. Such a scheme would have to invent a mechanism for defining multiple
+target hypotheses\footnote{Although it is not clear whether our approach would
+rid us of the necessity of such mechanisms. Word order mistakes pose a
+significant problem to a one-target-hypothesis-per-error approach.}.
+
+%In fact, in this way, the process of annotation could be partly automated, using an HPSG style feature compatibility check, adjusted for the purpose -  e.g. removing head dominance assumtpions (because in learner language, the head itself may be wrong), and instead taking a linear processing approach, to determine where grammatical errors are. 
+
+\subsection{Error Taxonomy}
+We adopted an error taxonomy to enrich our error identification annotations by
+additional error classification. Error type is not dependent on the trigger
+policy, any grammatical error type annotation scheme may be used here. To adjust
+an annotation scheme to the error context paradigm, one must simply divide the
+types among our three basic error type categories: Spelling, Grammar and
+Context, as already described in \ref{sec:threeholies}.
+
+For our test taxonomy, we used the taxonomy described in \cite{negrillo} as a
+base, and enhanced it by several concepts from the CLC annotation scheme, as
+specified in \cite{CLC}. While we retained the general ideas and structure of
+the aforementioned schemata, we aimed to improve their generality, and
+systematization.
+
+\begin{figure}
+\centering
+\includegraphics[scale=.2]{taxonomy}
+\caption{Error classification taxonomy.}
+\end{figure}
+
+We chose to follow a hierarchical setup, with some emphasis on typical decision
+paths an annotator will have to make during the annotation process. The
+hierarchical nature of our taxonomy made it a good fit for XML schemas, which
+define relationships in similar ways.
+
+In this taxonomy, "Error" is the root of all types of errors, with more and more
+specific error classifications percolating down the tree. An annotator may
+choose a less specific category in case they are unsure about a certain item.
+Some errors can indeed not be classified at all, and will have to remain
+annotated as the general category "Error." Since annotation of learner language
+can be tricky at times, we chose to allow these kinds of underspecification of
+error class in order to give an annotator the possibility to express an error
+type more flexibly.
+
+We also chose to alter a few concepts of the error taxonomies we based our own
+on, specifically, we chose to eliminate certain kinds of error types to make the
+annotation task less involved and more accurate.
+
+\begin{itemize}
+  \item \textit{Normative Errors.} Some normative concepts are present in almost
+  all European languages, such as capitalization at the beginning of a sentence.
+  We chose to ignore such errors, since they are not a sign of weakness in the
+  target language but likely pure by chance mistakes.
+  \item \textit{Style Errors.} Style is too soft a concept. Errors in style are
+  notoriously hard to peg and reliably quantify. Moreover, the NOCE corpus
+  contained data mostly from beginning English learners, where style errors are
+  not as important, evident or relevant.
+  \item \textit{Punctuation.} Punctuation mistakes are a very delicate concern:
+  they can have tremendous effects on any given token string on both a syntactic
+  and semantic level. They might change constituent boundaries, sentence
+  boundaries, argument structures and many more things. Moreover, they tend to
+  have cascading effects on the correctness of a given sentence. Again, because
+  we were annotating a beginner's corpus, we chose to ignore these kinds of
+  errors, since in beginner language punctuation often degrades to line noise
+  very quickly.
+\end{itemize}
+
+We also included a "transfer" attribute to indicate that an error is an $L_1$
+transfer error. This attribute was, however, not used in the annotation process,
+since the annotators' knowledge of the Spanish language was insufficient to
+make reliable judgements about it.
+
+\subsection{Markup}
+
+The source files to our corpus consisted of plain text files from the
+NOCE-corpus % FIXME cite
+of beginning to intermediate Spanish learners of English. Our corpus
+format is defined in \ref{def:errorformat}
+
+\begin{definition}\label{def:errorformat}
+
+A corpus $\mathcal{C}=\pair{\mathcal{T},\mathcal{E}}$ is defined as a pair of
+a set of tokens, $\mathcal{T}$ and a 
+set of errors, $\mathcal{E}$. Every token $\tau_i$ is indexed with a unique
+identifier subscript $i$\footnote{Note that the identifier may not consist entirely of
+numbers, since it's XML type is \texttt{ID}, which demands identifiers to be
+alphanumeric sequences. Furthermore, the identifiers need not adhere to any
+particular order, as long as they are unique.}.
+An error annotation is a tuple $\eta$ = $\pair{E,C,\theta,t,c}$, where
+\begin{itemize}
+  \item $E \subseteq \mathcal{T}$ is a nonempty set of indices of erroneous tokens
+  \item $C \subseteq \mathcal{T}$ is a possibly empty set of context tokens
   \item $\theta$ is the type of the error,
   \item $s$ a string denoting an optional target hypothesis hint, and
   \item $c$ an optional comment.
 \end{itemize}
 
 The error type $\theta$ is defined as an ordered sequence of categories from the
-taxonomy presented in \ref{sec:taxonomy}.
+taxonomy presented in \ref{sec:taxonomy}. Furthermore, $E \cap C = \emptyset$
+for all $\eta\in\mathcal{E}$.
 
-We hope this general format to be sufficient for annotation within our current
-goals, and extensible enough to cover future refinements of the annotation
-standard, such as the addition of part of speech tags or syntactic markup.
-Keeping the error annotation in a separate data structure, allows for the
-annotation itself to be more detailed and flexible.
+\end{definition}
 
-\section{Annotation Manual}\label{sec:manual}
+This general data structure is translated to XML. A DTD ensures correct usage of
+the markup. The authors also designed a graphical user interface based
+annotation tool\footnotemark which hides the implementation details of the
+corpus data from the user and enables a rapid annotation process. The user marks
+tokens from the corpus as erroneous, assigns them a type, possibly an error
+context and suggest a target hypothesis or records a comment entirely via the
+interface.
 
-\subsection{Spelling Errors}\label{sec:speling}
-A spelling error is an error that \textit{cannot} be explained by mistakes in
-morphology, e.g. derivation or inflection. It will typically comprise only one
-word. If it comprises more than one word, it is seen as a \textit{compound}
-spelling error, i.e. two tokens separated by a space should have been
-concatenated to yield only one token. Similarly, if the target hypothesis
-accounts for more than one word, the token should have been split up into two.
 
-\subsection{Context Errors}
-Context errors occur in otherwise completely grammatical sentences, which, however
-do not convey what was obviously intended by the author taking context into
-account. Lexical errors are also context errors, if the given word is grammatically
-valid within the sentence.
+\footnotetext{The tool is implemented in Haskell (\texttt{www.haskell.org}) on
+top of the GTK  framework (\texttt{www.gtk.org}). It free and open source. The
+sources to the tool and the XML markup format are given in appendix
+\ref{appendix:github}.}
 
-\subsection{Grammatical Errors}
+\subsection{Limitations}
+Some elements, for example word order errors have enforced context, but it is hard to express via our schema, so we don't do it. 
+No correct positions specified by word order errors - also hard to express. One could assign them a target position after an existing token, but then one must also keep track of other "reorderings" by multiple word order errors - I would like beer some to drink - here, both erroneous units - some and to drink should be placed between like and beer, but one must take care to order them correctly. Also, as our schema tags all possible errors, in the case of interchangeable errors (cf XXX), one cannot be certain if the error annotated is really the one, made by the learner, and not the other possible one. Most  importantly, there are sometimes more than one places where a word sequence can fit in.
 
-\subsection{Devising Target Hypotheses}
-Retain existing input by the author of the text to the greatest extent possible.
-The text should be only minimally altered in the target hypothesis.
+Errors within a token cannot be analyzed – for example, agglutination, because a token is our smallest unit.
 
 \section{Assessment}\label{sec:results}
 
@@ -147,50 +266,49 @@ methods.
 
 While inter-annotator agreement measures have been applied successfully to
 various corpus linguistic tasks, so far they have not found wide usage among
-learner language annotation. In fact, we believe the current techniques  are not
+learner language annotation. We believe the current techniques  may not
 applicable to this particular problem domain.
 
 \subsection{Unitization and Multidimensional Markup}
 
-Existing inter-annotator agreement measures %such as … \cite FIXME all assume
-the presence of atomic units in the corpus data, which are annotated by all
-annotators of a certain data set. This is the case with part of speech tagging
-or syntactic classification of chunked sentences, where all annotators are
-presented with a set of tokens or a set of chunks, respectively, which they have
-to annotate.
-
-The annotations \textit{over these units} are then used to calculate an
-agreement coefficient that will usually range from -1 to 1. However, learner
-language is a lot more diverse in nature, and it is not as easily possible to
-partition it into atomic data units. Instead, annotators have to \textit{find
-data points} and also \textit{manually delineate} them, according to the
-annotation manual. This brings the problem of \textit{unitization} into play.
+Existing inter-annotator agreement measures all assume the presence of atomic
+units in the corpus data, which are annotated by the annotators of a certain
+data set.  The annotations \textit{over these units} are then used to calculate an
+agreement coefficient. However, constituents of learner language, being fairly
+diverse in nature, are not as easily contained in atomic units. Instead, a
+common task in the annotation of learner language is \textit{delineating}
+the extent of a certain mistake.
 
 \cite{ap2008} briefly discuss unitization and go on to note that it has thus far
 not been exhaustively researched. Even more importantly, they explicitly comment
 on the unknown status of the validity of the only inter-annotator agreement
 measure in the corpus linguistic literature, $\alpha_U$, presented in
-\cite{krip1995}.
-
-Apart from being untested, $\alpha_U$ has several more problems that make it an
-ill fit for learner language data. As mentioned in \cite{ap2008}, Krippendorf's
-$\alpha_U$ assumes markup to be non-overlapping. This is certainly not the case
-with learner language, where one error may be nested within in another
-error\footnote{This happens very frequently with spelling errors.}. Also, if a
-segment annotated by one annotator spans more than one segment annotated by the
-other annotator, $\alpha_U$ will not calculate their agreement correctly.
-
-We see yet another problem with applying $\alpha_U$ to learner corpora: we
-showed earlier % FIXME: where
-that often learner errors will not present a coherent unit, but may be scattered
-across several tokens. $\alpha_U$ does not account for the possibility of
-annotations deviating \textit{within} the boundaries of a marked up error.
+\cite{krip1995}.  Apart from being untested, $\alpha_U$ also seems to have
+problems with overlapping markup both in the text, and between annotation sets
+(both of which are frequent in learner language data.) The measure also assumes
+annotation spans to be continuous, which is not the case in our data.
 
 \subsection{Quantificational Analysis}
 
+Facing these theoretical difficulties, we reached the conclusion that the only
+viable way to define inter-annotator agreement over learner language data
+we could improvise\footnotemark would still not yield interpretable results. In
+order to quantify our analysis efforts, we analyzed the two annotation sets with
+respect to their annotation's intersections.
+
+\footnotetext{It would in theory be possible to regard tokens as units, and that
+is indeed how our scheme is currently implemented. An agreement measure would
+then interpret annotations locally on these units only. However, this method has
+two major drawbacks: firstly, it does not account for more than one annotation
+on a given unit, which happens frequently. Also, if one annotator marks a set of
+tokens as an error consisting of more than one token, and the other annotator
+marks these tokens with several errors of the same category (which can happen,
+for example, with word order mistakes, as well as complex agreement mistakes),
+this method would fail to account for the discrepancy.}
+
 \begin{table}
   \centering
-\begin{tabular}{r|c|c}
+\begin{tabular}{r|c|c}\ref{tab:1}
   Total: & (905,933)& (98.69\%,101.74\%)\\\hline
   $io \wedge iy \wedge ir$:& 438 & 47.76 \%\\
   $so \wedge iy \wedge ir$:& 448 & 48.85 \%\\
@@ -217,12 +335,14 @@ annotations deviating \textit{within} the boundaries of a marked up error.
 
 Table \ref{tab:1} shows the total amount of corresponding data in the individual
 markup. The table's labeling reads as follows: $s$ stands for a non-empty
-intersection (or prefix relation for the error types) and $i$ for equality.
-$o,y,r$ denote the data type: $o$ stands for error tOkens, $y$ for the error's
-tYpe, and $r$ for the errors context (or \textit{tRigger}). Thus, $so\wedge
-sy\wedge ir$ is the number of all annotations that have a partial overlap on the
-error tokens $E$, a prefix match on the error type $\theta$, and identical error
-context.
+intersection between the two data sets (or prefix relation for the error types)
+and $i$ for equality.  $o,y,r$ denote the data type: $o$ stands for error
+tOkens, $y$ for the error's tYpe, and $r$ for the errors context (or
+\textit{tRigger}). Thus, $so\wedge sy\wedge ir$ is the number of all annotations
+that have a partial overlap on the error tokens $E$, a prefix match on the error
+type $\theta$, and identical error context.
+
+\section{Conclusion}
 
 \subsection{Possible Extensions}
 
@@ -238,6 +358,22 @@ tokens might be misleading or at least difficult to understand in case the error
 context does not constitute one sequence, but several scattered sequences, such
 as proper nouns or syntactic constituents. $C$ could therefore be turned into a
 set of sequences of token indices.
+
+Annotating a corpus with this schema is quite laborious, and borders on
+impossibility without proper support from an annotation tool, such as the one we
+had to devise. During the process, however, our tool was constantly improved
+according to the annotators' ideas, and made the annotation process easier in
+the process. Partial automation and other features might increase annotation
+comfort even further.
+
+The taxonomy presented in \label{taxonomy} proved to be a little unwieldy. In
+particular, it did not clearly distinguish between annotating a target and
+annotating an error type. The next subsection proposes a refinement that might
+make the annotation process more precise.
+
+A part of speech tagger could aid the annotators and enhance the corpus data
+significantly. However, there are only a few reports on reliable part of speech
+tagging for learner language. \cite{luedeling} presents one such approach.
 
 \subsubsection{Towards an underspecification formalism for target hypotheses}
 

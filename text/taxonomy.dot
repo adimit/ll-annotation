@@ -19,7 +19,7 @@ digraph Taxonomy {
 		Grammar -> Collocation;
 
 		Grammar -> Ommitted;
-		Grammar -> "Wrong";
+		Grammar -> "Replace";
 
 		subgraph cluster_3 {
 			color = black;
@@ -61,13 +61,13 @@ digraph Taxonomy {
 		Object -> Indirect;
 
 
-		"Wrong" -> Noun;
-		"Wrong" -> Verb;
-		"Wrong" -> Adjective;
-		"Wrong" -> Determiner;
-		"Wrong" -> Pronoun;
-		"Wrong" -> Preposition;
-		"Wrong" -> Conjunction;
+		"Replace" -> Noun;
+		"Replace" -> Verb;
+		"Replace" -> Adjective;
+		"Replace" -> Determiner;
+		"Replace" -> Pronoun;
+		"Replace" -> Preposition;
+		"Replace" -> Conjunction;
 
 
 		color = black;
