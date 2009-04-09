@@ -375,12 +375,12 @@ whereas on the other hand we have a clear cut kernel of reliable rules, too.
 
 Upon inspecting the corpus data in greater detail, we found out that it was
 sometimes hard to decide whether a particular error was a contextual or
-grammatic error. Moreover, often the categories within the grammatic error
+grammatic error. Moreover, the categories within the grammatic error
 branch were not clear enough. It seems that our merger of the CLC and Free Text
 introduced some confusion with certain categories. Particularly, the
 \textit{omission}, \textit{replace}, and \textit{redundancy} cases would at
-times `steal' hits from the other categories due to their very general
-nomenclature. We have revised the annotation manual to specifically mention that
+times `steal' hits from the other categories due to their general
+nomenclature. We revised the annotation manual to specifically mention that
 all other grammatical error categories take precedence over these three.
 Unfortunately, this seems to be a suboptimal solution. The next section contains
 a proposal for a much cleaner solution.
@@ -390,11 +390,17 @@ to be quite useful. Both annotators commented frequently that they lacked
 categories for adverbs and gerunds. The former has been integrated in to the
 scheme already, and we might add a gerund field in the future, too.
 
-Another very unclear point in the original manual was the minimalization of
-error spans constraint, which advises the annotator to only select the smallest
+However, the error type taxonomy was not our primary concern. In theory, any
+taxonomy would fit. We believe that taxonomies with a finer granularity might be
+preferable. Our main interest was the agreement on error boundary detection,
+error context detection and the three basic error types.  A very unclear point
+in that context with respect to the original manual was the minimalization of
+token spans constraint, which advises the annotator to only select the smallest
 possible amount of tokens, even when that means splitting up compound nouns.
 Also, both annotators reacted differently to situations where a sequence had to
-be marked up. This spawned a new subsection in our annotation manual as well.
+be marked up. We discovered that this had quite an effect on the consistency of
+our annotations and decided to add a new subsection in our annotation manual
+about sequences.
 
 \section{Conclusion}
 
@@ -407,7 +413,7 @@ might contribute to the clarity of the data, as well as to its searchability.
 The annotated corpus could be queried for erroneously placed verbs or
 prepositions, for example.
 
-Moreover, we came to the conclusion that defining the error context as a set of
+Moreover, we saw that defining the error context as a set of
 tokens might be misleading or at least difficult to understand in case the error
 context does not constitute one sequence, but several scattered sequences, such
 as proper nouns or syntactic constituents. $C$ could therefore be turned into a
@@ -416,7 +422,7 @@ set of sequences of token indices.
 Annotating a corpus with this schema is quite laborious, and borders on
 impossibility without proper support from an annotation tool, such as the one we
 had to devise. During the process, however, our tool was constantly improved
-according to the annotators' ideas, and made the annotation process easier in
+according to the annotators' ideas, and made the annotation task easier in
 the process. Partial automation and other features might increase annotation
 comfort even further.
 
