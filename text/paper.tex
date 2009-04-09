@@ -1,4 +1,4 @@
-\documentclass[12pt]{scrartcl}
+\documentclass[12pt]{article}
 \usepackage[utf8x]{inputenc}
 \usepackage{graphicx,linguex,natbib,aleks,amsmath,amsthm}
 \author{Magdalena Leshtanska \and Aleksandar Dimitrov}
@@ -10,15 +10,28 @@
 \newtheorem{definition}[thm]{Definition}
 
 \tableofcontents
-\abstract{I am an abstract!}
+\abstract{This paper presents an annotation method for errors in learner
+language that strives to be as compact and precise as possible, without
+sacrificing on generality or correctness. We develop contextualisation
+and underspecification methods for error annotations, based on a flexible annotation-driven markup.}
+
 \section{Introduction}\label{sec:intro}
 
-Literature overview. Bla Bla.
+Recently, there has been a growing interest in learner language corpora and
+learner errors analysis (citation). There is a need to
+identify errors in text, to make the automatic processing of those texts
+feasible\cite{nessel}. Also, the potential of learner errors for educational purposes and language
+acquisition insight has become increasingly recognized (citation), hence, many
+annotation schemes have been devised to identify and classify learner errors,
+such as \cite{negthesis}
 
-All of the annotation schemes mentioned above focus on the \textbf{text} itself,
-and will often even advise the annotator to \textit{modify} the underlying text
-with the annotation. We believe that a more error-centric annotation of the data
-can be beneficial.
+We propose a novel approach to annotating learner errors, based on the idea that
+an error is an inconsistency with its surroundings, rather .  This basic markup approach can be succesfully
+combined with any taxonomy for error ??classification. We have coupled it with a
+taxonomy for error classification and used the resulting scheme to annotate a
+subset of the NOce corpus (citation), achieving an inter-annotation agreement of
+???percent.
+
 
 Firstly, every annotation scheme that operates directly on the text or spans
 over a piece of text will run into two kinds of problems:
@@ -159,7 +172,7 @@ systematization.
 
 \begin{figure}
 \centering
-\includegraphics[scale=.2]{taxonomy}
+\includegraphics[scale=.2]{taxonomy}\label{fig:tax}
 \caption{Error classification taxonomy.}
 \end{figure}
 
@@ -207,7 +220,7 @@ make reliable judgements about it.
 
 \subsection{Markup}
 
-The source files to our corpus consisted of plain text files from the
+The source files for our corpus consisted of plain text files from the
 NOCE-corpus % FIXME cite
 of beginning to intermediate Spanish learners of English. Our corpus
 format is defined in \ref{def:errorformat}
@@ -397,5 +410,162 @@ account for the necessary steps in order to ensure grammaticality.
 This would also allow for existing annotations to be combined with
 \textit{generic instructions for correcting the input} and increase the
 granularity of the data.
+
+\appendix
+
+\section{Annotation Manual}
+  At any point, if you advance further down the taxonomy tree through a decision
+  you make later on, do not mark the error as the more general category, but
+  mark it as the more special category instead.
+
+\subsection{Steps in the annotation process}
+\begin{enumerate}
+\item Look at each token in turn, assuming all the rest is grammatical.
+\begin{itemize}
+  \item If the token is not spelled correctly, record a spelling error.
+  \item If an erroneous token $\tau_1$ is erroneous because it does not
+  harmonize with a token $\tau_2$
+  from its context,  mark $\tau_1$ as an error and $\tau_2$ as trigger.
+  \item If the utterance is ungrammatical, i.e. it does not constitute a part of
+  the language, mark it as a grammar mistake.
+  \item If the sentence is utterable under a certain condition, but this
+  condition is not met here, (i.e. forbidden by the general context of the
+  text) mark it as a contextual error.
+  \item Now, choose a subcategory from the branch you have chosen. Refer to the
+  graph in \ref{fig:tax}.
+  Try to be as specific as you can, otherwise, if not completely sure, choose
+  the upper node. Try to see in what way a token can be changed, as to
+  fit all the additional context. To find out which branch to choose, follow the
+  instructions under \ref{branches}
+  \item Repeat the process until all possible errors have been annotated, then
+  move to the next token.
+\end{itemize}
+
+  \item If the context is too erroneous and this erroneous context part affects
+  directly the immediate context of your token, try to find another solution,
+  because otherwise you will be building error hypotheses on errors. If it doesn't
+  (say, it is a spelling mistake), consider it as though it was correct while
+  looking for a directly interacting token as trigger.
+
+\item \textit{Local markup}: Keep it as local as possible, try to mark as
+triggers tokens that are grammatically dependent on each other in normal
+language production.
+
+\item Go from tokens up to other units, such as phrases, and be minimalistic, unless this makes you lose important information.
+
+\item Sometimes the error and/or the trigger will be a sequence. Take the
+minimal unit you can that doesn't lead to loss of information. Always choose
+the head of a constituent or compound word when it isn't the whole 
+constituent that plays a role in error formation.
+
+\ex.  The lovely, charming and amazing lady \textit{laugh} a lot 
+
+Here, only take ``lady'' as a trigger. But in cases like \ref{granad}, your
+trigger should be ``to study'', and not only ``to'', because otherwise you'd lose
+information.  Maybe the learner doesn't have a problem with prepositions, but with infinitives.
+
+\ex. I go for to study in Granada.\label{granad}
+
+\item Avoid cascading and annotating errors based on corrected errors. Only look at the unaltered text.
+
+\item Annotate every possibility. Since we do not apply cascading rules, one can use weighting algorithms to prefer one error to another in the case of concurrent errors:
+
+\ex. \a.\textit{A} mobile \textbf{phones} can be very useful. 
+\b. \textbf{A} mobile \textit{phones} can be very useful. 
+
+
+\item Only correct when necessary, do not be tempted to rephrase a construction,
+just because it would sound better or is more common, if there is nothing
+explicitly wrong with it.
+
+\item No style errors.
+
+\item No punctuation errors
+
+\item No capitalisation, only if it is something specific to English
+(Spelling$\to$Register), such as, say, capitalisation of proper nouns or months.
+
+\item If you have to choose between extremely similar possibilities, choose the
+one whose target hypothesis would have the least impact on the text in terms of
+phrasal constituents.
+
+\end{enumerate}
+
+\section{Branches in the taxonomy}\label{branches}
+
+\subsection{Collocation vs. Replace/Omission/Redundant}
+
+Verb and preposition collocations (i.e. where a certain verb forces a certain
+collocation) are to be marked as Collocations, not as an erroneous word. Words
+that occur with plural (\textit{one of}, \textit{between}) are also collocation
+bound, and an error in agreement is thus a collocation error.
+
+\subsection{Gerunds}
+
+Gerunds are nominalized noun forms.  Place mistakes related to the formation of
+gerunds in Morphology $\to$ Inflection, and errors related to the tense in which a
+gerund ought (not) to occur in Grammar $\to$ Verbtense.
+
+See also: Derivational Mistakes
+
+\subsection{Morphology}
+
+Morphological negation and plural formation mistakes often occur in English
+learner language. We tag them as Morphology and Morphology $\to$ Inflection instead
+of choosing a more specific category, but might extend our scheme in the future.
+
+\subsection{Derivational Mistakes}
+
+If a word is wrongly derived from another, (nominalization, suffixation,
+prefixation, etc\ldots) tag it as a morphological derivation mistake.
+
+\subsection{Animate/Inanimate}
+
+Is not covered by the scheme right now. Use Replace $\to$ Pronoun or similar. Might
+be added in the future.
+
+\subsection{Subject, Object, Predicate vs Pronoun, noun, verb.}
+
+If a whole constituent is missing or wrong, use the constituent classes. If it's
+one word out of the constituent, use the part of speech classes. Again: try to
+be as general as possible.
+
+\subsection{Number Agreement vs. Redundancy}
+
+\ex. a dogs
+
+\textit{a} is redundant, but because of number agreement. So you must annotate both,
+creating a circular dependency, where an erroneous \textit{dogs} has as error
+context \textit{a} and an erroneous \textit{a} has as context \textit{docs}
+
+\subsection{Compound nouns:}
+
+If a compound noun of two or more words is erroneous, annotate only the head noun, carrying the mistake.
+
+
+\subsection{Word order}
+\begin{itemize}
+\item \textit{Internal word order.} Words should be shuffled within the marked sequence. 
+\ex. Not only I must study $\to$ Not only must I study
+
+\item \textit{External word order.} Specified word needs to be moved somewhere
+else, its elements moving together as a unit.
+\ex. I the river like $\to$ I like the river
+
+\end{itemize}
+
+\subsection{Verb Tense}
+
+If the verb tense is wrongly formed, (\textit{he had having a nice time}), it's
+a grammatical error. Also, if there is a typical trigger word for verb tenses
+(such as \textit{since}, \textit{before}, \textit{if}) and the tense is wrong,
+it's a grammatical error. If the tense doesn't fit because of the broader
+context, it's a contextual mistake.
+
+\section{Source Code and XML Data}\label{sec:github}
+
+The complete code, as well as an up-to-date version of this paper can be found
+online at \texttt{www.github.com/adimit/ll-annotation}. The annotation schema's
+DTD is \texttt{AnnotationScheme.dtd} in the root directory of the repository.
 
 \end{document}
