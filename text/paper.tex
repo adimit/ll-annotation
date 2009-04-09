@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass{article}
 \usepackage[utf8x]{inputenc}
 \usepackage{graphicx,linguex,natbib,aleks,amsmath,amsthm}
 \bibpunct{(}{)}{;}{a}{,}{,}
@@ -29,16 +29,16 @@ identify and classify learner errors, such as \cite{negrillo}, \cite{CLC},
 \cite{ludeling}
 
 We propose a novel approach to annotating learner errors, based on the idea that
-an error is an inconsistency with its surroundings. This basic markup approach
+an error is an inconsistency with its context. This basic markup approach
 can be  combined with a taxonomy for error classification. We
 have coupled it with learner error  classification system and used the resulting
 scheme to annotate a subset of the NOCE corpus (\cite{negrilloph}), a corpus of
-beginning to intermediate English learners of Spanish.
+beginner to intermediate English learners of Spanish.
 
 Section \ref{sec:scheme} will introduce the general idea behind our annotation
 scheme and elaborate on more technical details. Section 3  gives a brief
 overview of real world performance of our method, as far as this is indeed
-possible. An annotation manual is contained in Appendix A.
+possible. Appendix A contains the annotation manual.
 
 \section{Error Taxonomy and Annotation Scheme}\label{sec:scheme}
 
@@ -49,7 +49,8 @@ strives  to  do some things only, and do them well.
 
 \subsection{Basic Concepts}\label{sec:threeholies}
 
-Our annotation scheme presents three distinct kinds of errors:
+Our annotation scheme presents three distinct kinds of errors based on a
+definition of an error as an inconsistency with the context:
 
 \begin{itemize}
   \item \textit{Grammatical context.} each introduced token enforces constraints
@@ -169,10 +170,10 @@ annotation task less involved and more accurate.
   \item \textit{Normative Errors.} Some normative concepts are present in almost
   all European languages, such as capitalization at the beginning of a sentence.
   We chose to ignore such errors, since they are not a sign of weakness in the
-  target language but likely pure by chance mistakes.
+  target language but likely pure by chance mistakes or general incompetence.
   \item \textit{Style Errors.} Style is too soft a concept. Errors in style are
   notoriously hard to peg and reliably quantify. Moreover, our corpus
-  contained data mostly from beginning English learners, where style errors are
+  contained data mostly from beginner English learners, where style errors are
   not as important, evident or relevant.
   \item \textit{Punctuation.} Punctuation mistakes are a very delicate concern:
   they can have tremendous effects on any given token string on both a syntactic
@@ -226,9 +227,7 @@ error can reference tokens within the corpus using a \textbf{key}, similar to
 the way modern Relational Data Bases reference their data. This makes the index
 more accessible and easier to maintain and eliminates both problems above,
 because every single annotation can be completely independent from all other
-annotations.  The source files for our corpus consisted of plain text files from
-the NOCE-corpus of beginning to intermediate Spanish learners of English. Our
-corpus format is defined in \ref{def:errorformat}.
+annotations. Our corpus format is defined in \ref{def:errorformat}.
 
 \begin{definition}\label{def:errorformat}
 
@@ -297,12 +296,13 @@ data set.  The annotations \textit{over these units} are then used to calculate 
 agreement coefficient. However, constituents of learner language, being fairly
 diverse in nature, are not as easily contained in atomic units. Instead, a
 common task in the annotation of learner language is \textit{delineating}
-the extent of a certain mistake.
+the extent of a certain mistake. This has been called \textbf{unitization} by
+\cite{krip}.
 
 \cite{artstein} briefly discuss unitization and go on to note that it has thus far
 not been exhaustively researched. Even more importantly, they explicitly comment
 on the unknown status of the validity of the only inter-annotator agreement
-measure in the corpus linguistic literature, $\alpha_U$, presented in
+measure in the literature, $\alpha_U$, presented in
 \cite{krip}.  Apart from being untested, $\alpha_U$ also seems to have
 problems with overlapping markup both in the text, and between annotation sets
 (both of which are frequent in learner language data.) The measure also assumes
@@ -355,12 +355,46 @@ this method would fail to account for the discrepancy.}
 
 Table \ref{tab:1} shows the total amount of corresponding data in the individual
 markup. The table's labeling reads as follows: $s$ stands for a non-empty
-intersection between the two data sets (or prefix relation for the error types)
-and $i$ for equality.  $o,y,r$ denote the data type: $o$ stands for error
-tOkens, $y$ for the error's tYpe, and $r$ for the errors context (or
-\textit{tRigger}). Thus, $so\wedge sy\wedge ir$ is the number of all annotations
-that have a partial overlap on the error tokens $E$, a prefix match on the error
-type $\theta$, and identical error context.
+intersection between the two data sets' fields. For the error types, $s$ was
+defined to be a prefix operator instead, accounting for common paths along the
+taxonomy tree.  $i$ stands for equality.  $o,y,r$ denote the data type: $o$
+stands for error tOkens, $y$ for the error's tYpe, and $r$ for the errors
+context (or \textit{tRigger}). Thus, $so\wedge sy\wedge ir$ is the number of all
+annotations that have a partial overlap on the error tokens $E$, a prefix match
+on the error type $\theta$, and identical error context.
+
+Having a look at the data presented in table \ref{tab:1}, the figures do not
+seem to be in strong support of our efforts thus far, although there is little
+grounds for comparison with other similar data. Nevertheless the figures may
+indeed allow partial assessment of the data.  Less than half of the annotations
+were completely equivalent. Interestingly, while the discrepancy between a
+strict and a fuzzy match on the token sequences alone is above 10\%, it is very
+low when we demand matches on the rest of the data structure, too. This probably means
+that we have an overhead of unclear cases, which are currently hard to catch,
+whereas on the other hand we have a clear cut kernel of reliable rules, too.
+
+Upon inspecting the corpus data in greater detail, we found out that it was
+sometimes hard to decide whether a particular error was a contextual or
+grammatic error. Moreover, often the categories within the grammatic error
+branch were not clear enough. It seems that our merger of the CLC and Free Text
+introduced some confusion with certain categories. Particularly, the
+\textit{omission}, \textit{replace}, and \textit{redundancy} cases would at
+times `steal' hits from the other categories due to their very general
+nomenclature. We have revised the annotation manual to specifically mention that
+all other grammatical error categories take precedence over these three.
+Unfortunately, this seems to be a suboptimal solution. The next section contains
+a proposal for a much cleaner solution.
+
+In revising the annotation scheme, the comment field of our annotations proved
+to be quite useful. Both annotators commented frequently that they lacked
+categories for adverbs and gerunds. The former has been integrated in to the
+scheme already, and we might add a gerund field in the future, too.
+
+Another very unclear point in the original manual was the minimalization of
+error spans constraint, which advises the annotator to only select the smallest
+possible amount of tokens, even when that means splitting up compound nouns.
+Also, both annotators reacted differently to situations where a sequence had to
+be marked up. This spawned a new subsection in our annotation manual as well.
 
 \section{Conclusion}
 
